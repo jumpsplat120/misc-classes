@@ -1,7 +1,7 @@
 local Miner, private, Symbol
 local Inventory, Turtle
 local TypeError, InvalidError
-local is
+local is, TL
 
 private = require("lib.Classy.instances")
 Symbol  = require("lib.Classy.Symbol")
