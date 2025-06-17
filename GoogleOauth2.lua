@@ -1,4 +1,4 @@
-local Object, GoogleOauth2, Async, Symbol, HTTP
+local Object, GoogleOauth2, Async, Symbol, HTTPS
 local private, TL, is, socket, surl, json, varargs
 local TypeError, UnsetError, ConflictError, InvalidError, PatternError, LengthError
 local WithinAsyncError, NotLoadedError, MissingError
@@ -12,7 +12,7 @@ is      = require("lib.is")
 varargs = require("lib.varargs")
 
 Async = require("classes.Async")
-HTTP  = require("classes.HTTP")
+HTTPS = require("classes.HTTPS")
 
 WithinAsyncError = require("classes.errors.WithinAsyncError")
 NotLoadedError   = require("classes.errors.NotLoadedError")
@@ -247,8 +247,8 @@ function GoogleOauth2:openURL(html)
     output = output:after("?"):split("&")
     output = table.map(output, function(_, v) return table.unpack(v:split("=")) end)
 
-    token = HTTP("https://oauth2.googleapis.com/token", nil, {
-        encoding = HTTP.FORM,
+    token = HTTPS("https://oauth2.googleapis.com/token", nil, {
+        encoding = HTTPS.FORM,
         data     = {
             code          = output.code,
             client_id     = p.client_id,
@@ -329,7 +329,7 @@ function GoogleOauth2:setTokens(access, refresh)
     
     if true then return self end
 
-    code, data = HTTP("https://oauth2.googleapis.com/tokeninfo?access_token=" .. p.access_token):fetch()
+    code, data = HTTPS("https://oauth2.googleapis.com/tokeninfo?access_token=" .. p.access_token):fetch()
 
     WithinAsyncError:assert(code == 200, data)
 
@@ -354,8 +354,8 @@ function GoogleOauth2:refreshTokens(html)
     UnsetError:assert(p.refresh_token, "refresh_token", "refreshTokens")
     UnsetError:assert(p.scopes, "scopes", "refreshTokens")
 
-    token = HTTP("https://oauth2.googleapis.com/token", nil, {
-        encoding = HTTP.FORM,
+    token = HTTPS("https://oauth2.googleapis.com/token", nil, {
+        encoding = HTTPS.FORM,
         data     = {
             client_id     = p.client_id,
             grant_type    = "refresh_token",
@@ -397,7 +397,7 @@ function GoogleOauth2:makeAPIRequest(url)
 
     NotLoadedError:assert(p.access_token and p.refresh_token, "openURL", "makeAPIRequest")
 
-    code, data = HTTP(url, {
+    code, data = HTTPS(url, {
         Authorization = "Bearer " .. p.access_token
     }):fetch()
     
@@ -441,7 +441,7 @@ end
 function GoogleOauth2.__get:token_expiry()
     local token, code, data
 
-    token = HTTP("https://oauth2.googleapis.com/tokeninfo?access_token=" .. private[self].access_token)
+    token = HTTPS("https://oauth2.googleapis.com/tokeninfo?access_token=" .. private[self].access_token)
 
     code, data = token:fetch()
 

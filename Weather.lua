@@ -2,7 +2,7 @@
 local Object
 local private, Symbol
 local TypeError, HTTPResponseError, InvalidError, RangeError
-local Weather, HTTP, Error, Date
+local Weather, HTTPS, Error, Date
 local TL, is
 local url
 local json
@@ -18,7 +18,7 @@ RangeError        = require("classes.errors.RangeError")
 TypeError         = require("classes.errors.TypeError")
 
 Error = require("classes.Error")
-HTTP  = require("classes.HTTP")
+HTTPS = require("classes.HTTPS")
 Date  = require("classes.Date")
 
 TL = require("lib.string_template")
@@ -95,7 +95,7 @@ function Weather:fetch()
     if not p.location then
         --49344 provides only status, message, lat and lon as fields
         --to save on bandwidth.
-        connect = HTTP("http://ip-api.com/json/?fields=49344")
+        connect = HTTPS("http://ip-api.com/json/?fields=49344")
 
         code, body = connect:fetch()
         
@@ -108,7 +108,7 @@ function Weather:fetch()
         p.location = TL("{(body.lat},{body.lon}", { body = body })
     end
 
-    connect = HTTP(TL(
+    connect = HTTPS(TL(
         "http://api.weatherapi.com/v1/"   ..
         "%{p.query.id}.%{p.response.id}"  ..
         "?key=%{p.api_key}&q=%{location}" .. 
