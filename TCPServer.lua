@@ -3,7 +3,7 @@ local Object
 local TCPServer, private
 local Emitter
 local TypeError, SocketError
-local is
+local is, TL
 local socket
 
 Object  = require("lib.Classy")
@@ -14,6 +14,7 @@ Emitter = require("classes.mixins.Emitter")
 SocketError = require("classes.errors.SocketError")
 TypeError   = require("classes.errors.TypeError")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 socket = require("socket")

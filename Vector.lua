@@ -1,7 +1,7 @@
 ---@type Object
 local Object
 local Vector, private, Swizzle, Unpack, Ipairs, AsTable
-local is, varargs
+local TL, is, varargs
 local TypeError, RangeError, VectorSizeError, ConditionalTypeError
 
 Object   = require("lib.Classy")
@@ -12,7 +12,8 @@ AsTable = require("classes.mixins.AsTable")
 Unpack  = require("classes.mixins.Unpack")
 Ipairs  = require("classes.mixins.Ipairs")
 
-is    = require("lib.is")
+TL      = require("lib.string_template")
+is      = require("lib.is")
 varargs = require("lib.varargs")
 
 ConditionalTypeError = require("classes.errors.ConditionalTypeError")

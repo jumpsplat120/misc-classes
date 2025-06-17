@@ -1,11 +1,12 @@
 local Object, private
 local Oauth2, Async, HTTPS, HTTPServer
 local TypeError, UnsetError, UnimplementedError, StateMismatchError, WithinAsyncError, AuthorizationError
-local is, surl, json
+local TL, is, surl, json
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 HTTPServer = require("classes.HTTPServer")

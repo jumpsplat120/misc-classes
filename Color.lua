@@ -3,7 +3,7 @@
 ---@type Object
 local Object
 local Color, Symbol
-local private, is, tobase
+local private, is, tobase, TL
 local Unpack, Ipairs, AsTable
 local TypeError, ConstructorError, RangeError, UnsetError
 local LengthError, PatternError, InvalidError
@@ -12,6 +12,7 @@ Object  = require("lib.Classy")
 Symbol  = require("lib.Classy.Symbol")
 private = require("lib.Classy.instances")
 
+TL     = require("lib.string_template")
 is     = require("lib.is")
 tobase = require("lib.tobase")
 

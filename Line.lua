@@ -1,7 +1,7 @@
 ---@type Object
 local Object
 local Vector, Drawable
-local Line, private, is
+local Line, private, is, TL
 local ParameterAmountError, VectorSizeError, RangeError, TypeError
 
 Object  = require("lib.Classy")
@@ -11,6 +11,7 @@ Vector = require("classes.Vector")
 
 Drawable = require("classes.mixins.Drawable")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 ParameterAmountError = require("classes.errors.ParameterAmountError")

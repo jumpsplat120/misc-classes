@@ -1,5 +1,5 @@
 local ChoiceOptionLine
-local NeedsRoll, Checkbox, Vector, private
+local NeedsRoll, Checkbox, Vector, Color, private
 local Emitter
 local is
 local TypeError

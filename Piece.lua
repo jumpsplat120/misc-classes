@@ -1,17 +1,21 @@
 ---@type Object
 local Object
 local Piece, private
-local Rectangle, Vector, Color
+local Rectangle, Vector, Color, Game
 local Emitter
+local TL
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+Game      = require("classes.Game")
 Color     = require("classes.Color")
 Vector    = require("classes.Vector")
 Rectangle = require("classes.Rectangle")
 
 Emitter = require("classes.mixins.Emitter")
+
+TL = require("lib.string_template")
 
 Piece = Object:extend()
 
@@ -19,7 +23,9 @@ Piece:implement(Emitter)
 
     --======PRIVATE FUNCTIONS======--
 
-local event, setsprite, draw, invis, white
+local event, setsprite, draw, invis, white, game
+
+game = Game()
 
 function event(_, event, self, ...)
     self:dispatchSync(event, ...)

@@ -5,7 +5,7 @@ local MouseInteractions, Drawable, Emitter
 local Vector, Rectangle, Triangle
 local TableAmountError, ParameterAmountError, ConstructorError
 local VectorSizeError, InvalidError, TypeError
-local varargs, is
+local varargs, is, TL
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
@@ -27,6 +27,7 @@ TypeError            = require("classes.errors.TypeError")
 
 varargs = require("lib.varargs")
 is      = require("lib.is")
+TL      = require("lib.string_template")
 
 Polygon = Object:extend()
 

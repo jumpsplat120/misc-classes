@@ -1,9 +1,10 @@
 ---@type Object
 local Object
-local TextInput, Text, Font, Color, Rectangle, private
+local TextInput, Text, Font, Color, Rectangle, Vector, private
 local Emitter
 local TypeError
-local is, utf8
+local is, TL
+local utf8
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
@@ -18,6 +19,7 @@ Emitter = require("classes.mixins.Emitter")
 
 TypeError = require("classes.errors.TypeError")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 utf8 = require("utf8")

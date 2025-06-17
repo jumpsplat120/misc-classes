@@ -1,8 +1,9 @@
 ---@type Object
 local Object
-local Date, private, Error, is
+local Date, private, Error, is, TL
 local PatternError, ConstructorError, TypeError, UnsetError, InvalidError, RangeError
 
+TL      = require("lib.string_template")
 is      = require("lib.is")
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")

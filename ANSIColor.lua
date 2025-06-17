@@ -1,11 +1,12 @@
 ---@type Object
 local Object
-local ANSIColor, private, is
+local ANSIColor, private, is, TL
 local TypeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 TypeError = require("classes.errors.TypeError")

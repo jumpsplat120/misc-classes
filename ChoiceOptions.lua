@@ -1,6 +1,6 @@
 ---@type Object
 local Object
-local ChoiceOptions, UsingSkill, NeedsRoll, Rectangle, Color, Font, Text, private
+local ChoiceOptions, UsingSkill, NeedsRoll, Rectangle, Color, Font, Text, Vector, private
 local Emitter
 local VectorSizeError, TypeError
 local is
@@ -11,6 +11,7 @@ private = require("lib.Classy.instances")
 UsingSkill = require("classes.UsingSkill")
 NeedsRoll  = require("classes.NeedsRoll")
 Rectangle  = require("classes.Rectangle")
+Vector     = require("classes.Vector")
 Color      = require("classes.Color")
 Font       = require("classes.Font")
 Text       = require("classes.Text")

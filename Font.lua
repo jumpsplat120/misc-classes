@@ -3,7 +3,7 @@ local Object
 local Font, Symbol, private
 local TypeError, InvalidError, FileTypeError, ConstructorError, GlyphRenderError
 local utf8
-local is, varargs
+local is, TL
 
 Object = require("lib.Classy")
 Symbol = require("lib.Classy.Symbol")
@@ -17,6 +17,7 @@ TypeError        = require("classes.errors.TypeError")
 
 utf8 = require("utf8")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 Font = Object:extend()

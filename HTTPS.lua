@@ -2,13 +2,15 @@
 local Object
 ---@type Async
 local Async
-local Symbol, private, HTTPS, is, json
+local Symbol, private, HTTPS, is, TL, json
 local TypeError, InvalidError
 
 Object  = require("lib.Classy")
 Symbol  = require("lib.Classy.Symbol")
 private = require("lib.Classy.instances")
-is      = require("lib.is")
+
+TL = require("lib.string_template")
+is = require("lib.is")
 
 Async = require("classes.Async")
 Error = require("classes.Error")

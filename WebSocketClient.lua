@@ -4,7 +4,7 @@ local WebSocketClient, private
 local TypeError, SocketError, NotLoadedError
 local Emitter
 local Symbol, Error, Async
-local is, tobase
+local is, tobase, TL
 local ssl
 local surl, socket, mime, bit
 
@@ -21,6 +21,7 @@ Emitter = require("classes.mixins.Emitter")
 Error = require("classes.Error")
 Async = require("classes.Async")
 
+TL     = require("lib.string_template")
 is     = require("lib.is")
 tobase = require("lib.tobase")
 

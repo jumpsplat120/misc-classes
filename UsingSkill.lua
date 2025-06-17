@@ -1,5 +1,5 @@
 local ChoiceOptionLine
-local UsingSkill, Rectangle, TextInput, Vector, Color, Line, private
+local UsingSkill, Rectangle, TextInput, Vector, Color, Line, Game, private
 local Emitter
 local is
 local TypeError
@@ -12,6 +12,7 @@ TextInput = require("classes.TextInput")
 Vector    = require("classes.Vector")
 Color     = require("classes.Color")
 Line      = require("classes.Line")
+Game      = require("classes.Game")
 
 Emitter = require("classes.mixins.Emitter")
 
@@ -25,6 +26,10 @@ UsingSkill = ChoiceOptionLine:extend()
 UsingSkill:implement(Emitter)
 
     --======PRIVATE FUNCTIONS======--
+
+local game
+
+game = Game()
 
 local function event(_, event, self, ...)
     self:dispatchSync(event, ...)

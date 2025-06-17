@@ -1,13 +1,15 @@
 local Object, GoogleOauth2, Async, Symbol, HTTP
-local private, is, socket, surl, json, varargs
+local private, TL, is, socket, surl, json, varargs
 local TypeError, UnsetError, ConflictError, InvalidError, PatternError, LengthError
 local WithinAsyncError, NotLoadedError, MissingError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 Symbol  = require("lib.Classy.Symbol")
+
+TL      = require("lib.string_template")
 is      = require("lib.is")
-varargs   = require("lib.varargs")
+varargs = require("lib.varargs")
 
 Async = require("classes.Async")
 HTTP  = require("classes.HTTP")

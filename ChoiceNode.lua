@@ -1,6 +1,6 @@
 ---@type Object
 local Object
-local ChoiceNode, Symbol, Rectangle, Color, Triangle, Node, Font, ChoiceOptions, private
+local ChoiceNode, Symbol, Rectangle, Color, Triangle, Node, Font, ChoiceOptions, Vector, Game, private
 local Emitter
 local VectorSizeError, TypeError
 local is
@@ -12,8 +12,10 @@ private = require("lib.Classy.instances")
 ChoiceOptions = require("classes.ChoiceOptions")
 Rectangle     = require("classes.Rectangle")
 Triangle      = require("classes.Triangle")
+Vector        = require("classes.Vector")
 Color         = require("classes.Color")
 Font          = require("classes.Font")
+Game          = require("classes.Game")
 Text          = require("classes.Text")
 
 Emitter = require("classes.mixins.Emitter")
@@ -29,7 +31,10 @@ ChoiceNode:implement(Emitter)
 
     --======PRIVATE FUNCTIONS======--
 
+local game
 local SUCCESS, FAIL, TIE
+
+game = Game()
 
 SUCCESS = Symbol("success")
 FAIL    = Symbol("fail")

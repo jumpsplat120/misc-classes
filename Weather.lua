@@ -1,24 +1,32 @@
 ---@type Object
 local Object
-local Weather, private, is, Symbol, url, HTTP, Error, Date, json
+local private, Symbol
 local TypeError, HTTPResponseError, InvalidError, RangeError
+local Weather, HTTP, Error, Date
+local TL, is
+local url
+local json
 
-is      = require("lib.is")
+
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 Symbol  = require("lib.Classy.Symbol")
-
-Error = require("classes.Error")
-HTTP  = require("classes.HTTP")
-Date  = require("classes.Date")
-
-url  = require("socket.url")
-json = require("third_party.json")
 
 HTTPResponseError = require("classes.errors.HTTPResponseError")
 InvalidError      = require("classes.errors.InvalidError")
 RangeError        = require("classes.errors.RangeError")
 TypeError         = require("classes.errors.TypeError")
+
+Error = require("classes.Error")
+HTTP  = require("classes.HTTP")
+Date  = require("classes.Date")
+
+TL = require("lib.string_template")
+is = require("lib.is")
+
+json = require("third_party.json")
+
+url  = require("socket.url")
 
 Weather = Object:extend()
 

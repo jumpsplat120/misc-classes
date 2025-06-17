@@ -4,7 +4,7 @@ local IRCClient, private
 local SocketError, TypeError
 local Emitter
 local socket
-local is
+local is, TL
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
@@ -14,6 +14,7 @@ TypeError   = require("classes.errors.TypeError")
 
 Emitter = require("classes.mixins.Emitter")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 socket = require("socket")

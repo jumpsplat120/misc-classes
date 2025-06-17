@@ -4,7 +4,7 @@ local Turtle, private, Symbol
 local Inventory
 local Emitter
 local TypeError, InvalidError, RangeError
-local is
+local is, TL
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
@@ -18,6 +18,7 @@ InvalidError = require("classes.errrors.InvalidError")
 RangeError   = require("classes.errrors.RangeError")
 TypeError    = require("classes.errrors.TypeError")
 
+TL = require("lib.string_template")
 is = require("lib.is")
 
 Turtle = Object:extend()
