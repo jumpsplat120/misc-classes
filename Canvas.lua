@@ -89,7 +89,7 @@ function Canvas:update(...)
     end
 
     love.graphics.push("all")
-
+    
     love.graphics.setCanvas({ p.canvas, stencil = p.stencil })
     love.graphics.clear()
 
