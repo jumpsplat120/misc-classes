@@ -797,7 +797,7 @@ end
 function Color.__get:rgb255()
     local v = private[self].values
 
-    return { 
+    return {
         red   = (v[1] * 255):round(),
         blue  = (v[2] * 255):round(),
         green = (v[3] * 255):round(),
