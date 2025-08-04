@@ -32,7 +32,7 @@ function Transform:apply()
     local p = private[self]
     
     love.graphics.applyTransform(p.transform)
-
+    
     return self
 end
 
