@@ -13,9 +13,7 @@ private[Emitter] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local EMPTY_TABLE, build, run
-
-EMPTY_TABLE = {}
+local exists, build, run
 
 function build(self, event, func, once, sync, ...)
     local p = private[self]
@@ -37,6 +35,17 @@ end
 
 function run(self, listener, ...)
     listener.func(table.unpack(table.imerge(self, listener.args, { ... })))
+end
+
+--If p.events is nil, then that means no listeners have been created.
+--If p.events[event] is nil, then that means that specific lister hasn't been created.
+--However, if it's empty, then it was created at one point, then removed.
+function exists(p, event)
+    if p.events         == nil then return false end
+    if p.events[event]  == nil then return false end
+    if #p.events[event] == 0   then return false end
+
+    return true
 end
 
     --======CONSTRUCTOR======--
@@ -75,7 +84,7 @@ function Emitter:dispatch(event, ...)
     p    = private[self]
     args = { ... }
     
-    if #(p.events[event] or EMPTY_TABLE) == 0 then return self end
+    if not exists(p, event) then return self end
 
     p.events[event] = table.filter(p.events[event], function(_, listener)
         if listener.sync then return true end
@@ -94,8 +103,8 @@ function Emitter:dispatchSync(event, ...)
     p    = private[self]
     args = { ... }
     
-    if #(p.events[event] or EMPTY_TABLE) == 0 then return self end
-    
+    if not exists(p, event) then return self end
+
     p.events[event] = table.filter(p.events[event], function(_, listener)
         if not listener.sync then return true end
 
@@ -110,8 +119,8 @@ end
 function Emitter:discardEvent(event, func)
     local p = private[self]
     
-    if #(p.events[event] or EMPTY_TABLE) == 0 then return self end
-
+    if not exists(p, event) then return self end
+    
     p.events[event] = table.filter(p.events[event], function(_, listener)
         return listener.obj ~= self and listener.func ~= func
     end)
