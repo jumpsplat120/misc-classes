@@ -34,13 +34,13 @@ function Image:new(image, a, b, c, d)
         p.position = a:clone()
         p.size = b:clone()
     elseif is(a, "number") and is(b, "number") and is(c, Vector) then
-        p.position  = Vector:fromValues(a, b)
+        p.position = Vector:fromValues(a, b)
         p.size = c:clone()
     elseif is(a, Vector) and is(b, "number") and is(c, "number") then
-        p.position  = a:clone()
+        p.position = a:clone()
         p.size = Vector:fromValues(b, c)
     elseif is(a, "number") and is(b, "number") and is(c, "number") and is(d, "number") then
-        p.position  = Vector:fromValues(a, b)
+        p.position = Vector:fromValues(a, b)
         p.size = Vector:fromValues(c, d)
     else
         local ta, tb, tc, td
@@ -84,8 +84,8 @@ function Image:new(image, a, b, c, d)
 
     TypeError:assert(p.image, "image", image, "string/CompressedImageData/ImageData/FileData")
 
-    p.dims  = Vector:fromValues(p.image:getDimensions())
-    p.scale = p.size / p.dims
+    p.dimensions = Vector:fromValues(p.image:getDimensions())
+    p.origin     = p.dimensions * 0.5
 end
 
     --======METHODS======--
@@ -99,18 +99,32 @@ function Image:set(position, size)
     
     if size then
         p.size:setToVector(size)
-        p.scale:setToTable(Vector:staticDivide(p.size, p.dims))
     end
 
     return self
 end
 
 function Image:draw()
-    local p = private[self]
+    local p, scale
+    
+    p = private[self]
+
+    --We calculate the scale at draw time since the
+    --size could be changed using obj.size.x or some
+    --other manner.
+    scale = p.size / p.dimensions
 
     Drawable.apply(self)
     
-    love.graphics.draw(p.image, p.position.x, p.position.y, 0, p.scale.x, p.scale.y)
+    --Scales about the center, since that's likely what you want when you're changing
+    --the size of the image.
+    love.graphics.draw(
+        p.image,
+        p.position.x + p.origin.x * scale.x, p.position.y + p.origin.y * scale.y,
+        0,
+        scale.x, scale.y,
+        p.origin.x, p.origin.y
+    )
 
     Drawable.remove(self)
 end
@@ -164,12 +178,10 @@ end
     --======SETTERS======--
 
 function Image.__set:size(value)
-    local p = private[self]
-
     TypeError:assert(is(value, Vector), value, "size", Vector)
+    VectorSizeError:assert(value.size == 2, value.size, 2)
 
-    p.size:setToVector(value)
-    p.scale:setToTable(Vector:staticDivide(p.size, p.dims))
+    private[self].size = value
 end
 
 function Image.__set:position(value)
