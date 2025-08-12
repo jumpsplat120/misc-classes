@@ -794,6 +794,14 @@ function Color.__get:rgb()
     }
 end
 
+function Color.__get:love_rgb()
+    local v = private[self].values
+    
+    return {
+        v[1], v[2], v[3], v[4]
+    }
+end
+
 function Color.__get:rgb255()
     local v = private[self].values
 
