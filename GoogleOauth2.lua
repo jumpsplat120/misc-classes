@@ -119,11 +119,12 @@ function GoogleOauth2:openURL(html)
 
     --If the user closed the URL, but we're currently waiting for a response,
     --then we just reopen the link to the page we're waiting for, rather than
-    --regenerating from scratch.
+    --regenerating from scratch. We return false to let the user know that this
+    --version isn't the one you want to wait for.
     if p.url then
         love.system.openURL(p.url)
 
-        return self
+        return false
     end
 
     UnsetError:assert(p.scopes, "scopes", "openURL")
@@ -175,14 +176,14 @@ function GoogleOauth2:openURL(html)
 
             return k, v
         end)), function(_, a, b)
-            return TL("%{b}%{surl.escape(a[2])}=%{a[1]}&", {
+            return TL("%{b}%{a[1]}=%{surl.escape(a[2])}&", {
                 a = a,
                 b = b,
                 surl = surl
             })
         end, ""):sub(1, -2)
     })
-
+    
     if p.custom_redirect_uri then return url end
 
     server = WithinAsyncError:assert(socket.tcp())
@@ -379,9 +380,7 @@ function GoogleOauth2:refreshTokens(html)
         return self
     end
     
-    for _, scope in ipairs(data.scope:split(" ")) do
-        scope = scope:after("auth/")
-        
+    for _, scope in ipairs(data.scope:split(" ")) do        
         MissingError:assert(table.find(p.scopes, scope), scope, "scopes")
     end
 
