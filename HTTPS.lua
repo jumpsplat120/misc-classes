@@ -50,7 +50,7 @@ thread_body = [[
     local http, args, code, data, headers
     local url, data, options
 
-    --DOES NOT WORK ON ZORIN AS OF AUG21st
+    --DOES NOT WORK ON ZORIN AS OF AUG21st, 2024
     --Could maybe cheese it with io.popen("curl")
     https = require("https")
     args  = { ... }
