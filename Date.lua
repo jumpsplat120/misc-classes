@@ -1395,11 +1395,9 @@ end
 function Date.__set:day(value)
     TypeError:assert(is(value, "number"), "day", type(value), "number")
 
-    local p = private[self]
+    RangeError:assert(1 <= value and value <= self.days_in_month, value, "day", 1, self.days_in_month)
 
-    validateDate(p)
-
-    p.day = value
+    private[self].day = value
 end
 
 function Date.__set:hour(value)
@@ -1439,7 +1437,7 @@ end
 function Date:__tostring()
     local p = private[self]
 
-    if self.is_instance then return self:tostringHelper(p.day, p.month, p.year) end
+    if self.is_instance then return self:tostringHelper(p.month, p.day, p.year) end
 
     return self:tostringHelper("Class")
 end
