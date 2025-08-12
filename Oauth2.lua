@@ -1,6 +1,7 @@
 local Object, private
 local Oauth2, Async, HTTPS, HTTPServer
-local TypeError, UnsetError, UnimplementedError, StateMismatchError, WithinAsyncError, AuthorizationError
+local TypeError, UnsetError, UnimplementedError, StateMismatchError, WithinAsyncError
+local AuthorizationError, MissingError
 local TL, is, surl, json
 
 Object  = require("lib.Classy")
@@ -17,6 +18,7 @@ AuthorizationError = require("classes.errors.AuthorizationError")
 StateMismatchError = require("classes.errors.StateMismatchError")
 UnimplementedError = require("classes.errors.UnimplementedError")
 WithinAsyncError   = require("classes.errors.WithinAsyncError")
+MissingError       = require("classes.errors.MissingError")
 UnsetError         = require("classes.errors.UnsetError")
 TypeError          = require("classes.errors.TypeError")
 
@@ -265,12 +267,17 @@ function Oauth2:authorizationCodeGrant()
     server = HTTPServer("localhost", self.redirect_port)
     uuid   = math.uuid()
 
-    --Open the user's system browser with the url from the server.
-    --GOTCHA: If you're using localhost for Twitch, it is incredibly
-    --incredibly picky. The `server.url` value does not have a trailing
-    --slash by default, so it is important to provide one. As well,
-    --a port is required, since Twitch *needs* to know the port address.
-    love.system.openURL(TL("%{url}?%{args}", {
+    --If the user opened the URL, then closed it without finishing the process,
+    --then tried top open it again, this second opening will use the cached URL,
+    --then return false, so that "thread" can be discarded. This way we don't
+    --try double authenticating.
+    if p.opened_url then
+        love.system.openURL(p.opened_url)
+
+        return false
+    end
+
+    p.opened_url = TL("%{url}?%{args}", {
         url  = p.authorization_url,
         args = paramify({
             response_type = "code",
@@ -279,7 +286,14 @@ function Oauth2:authorizationCodeGrant()
             scope         = p.scope_callback(p.scopes),
             state         = uuid
         })
-    }))
+    })
+
+    --Open the user's system browser with the url from the server.
+    --GOTCHA: If you're using localhost for Twitch, it is incredibly
+    --incredibly picky. The `server.url` value does not have a trailing
+    --slash by default, so it is important to provide one. As well,
+    --a port is required, since Twitch *needs* to know the port address.
+    love.system.openURL(p.opened_url)
     
     --Rather than make Ouath2 need to access the main loop, we just
     --briefly create an Async function, and shut it down when we're
@@ -311,9 +325,10 @@ function Oauth2:authorizationCodeGrant()
     AuthorizationError:assert(not data.error, data.error_description)
     
     --Split the query values into a table, and unescape the uri encoding.
+    --NOTE: Can never be nil, but LLS thinks it can.
     data = table.foreach(data.url.query:split("&"), function(_, v)
         return table.unpack(surl.unescape(v):split("="))
-    end)
+    end) or {}
     
     --According to Twitch, we're supposed to check to make sure the state
     --still matches. The spec says it as well, I believe, but this *may*
@@ -325,7 +340,7 @@ function Oauth2:authorizationCodeGrant()
         p.token_request = HTTPS(p.token_url)
     end
 
-    --Set the form data. This is not cached, because the code will
+    --Set the form data. This is *not* cached, because the code will
     --likely be different.
     p.token_request:setData({
         client_secret = p.client_secret,
@@ -341,7 +356,7 @@ function Oauth2:authorizationCodeGrant()
     WithinAsyncError:assert(code == 200, data)
 
     data = json.parse(data)
-
+    
     p.access_token  = data.access_token
     p.refresh_token = data.refresh_token
 
@@ -355,16 +370,55 @@ Oauth2.authorize = Oauth2.authorizationCodeGrant
 --need to be passed around like a trans puppy girl at a dungeon.
 --Allows you to set them all at once, rather than needing to do them
 --individually with the getters/setters, and is chainable.
-function Oauth2:defineURLs(auth, token, refresh)
+--NOTE: The url you provide for info *must* have a pattern for usage with
+--string_template, explicitly labeled `token`.
+--Ex. "https://www.website.com/%{token}/info"
+--NOTE: This may change in the future, dependent on whether all Ouath2's use
+--tokeninfo?access_token=%{token}, or if that's just Google.
+function Oauth2:defineURLs(auth, token, refresh, info)
     local p = private[self]
 
     TypeError:assert(is(refresh, "string"), "refresh", type(refresh), "string")
     TypeError:assert(is(token, "string"), "token", type(token), "string")
+    TypeError:assert(is(info, "string"), "info", type(info), "string")
     TypeError:assert(is(auth, "string"), "auth", type(auth), "string")
 
     p.authorization_url = auth
     p.refresh_url       = refresh
+    p.verify_url        = info
     p.token_url         = token
+
+    return self
+end
+
+--Provide the access and refresh tokens if available, allowing you to skip the
+--token step, if possible. If we get "invalid_token" as a reponse, we attempt to
+--refresh with the provided refresh token.
+function Oauth2:setTokens(access, refresh)
+    local p, code, data
+    
+    p = private[self]
+
+    TypeError:assert(is(access, "string"), access, type(access), "string")
+    TypeError:assert(is(refresh, "string"), refresh, type(refresh), "string")
+    UnsetError:assert(p.verify_url, "verify_url", "setTokens")
+
+    p.access_token  = access
+    p.refresh_token = refresh
+
+    code, data = HTTPS(TL(p.verify_url, { token = access })):fetch()
+    
+    WithinAsyncError:assert(code == 200 or code == 400, data)
+
+    data = json.parse(data)
+
+    if data.error == "invalid_token" then
+        return self:refreshTokens()
+    end
+
+    for _, scope in ipairs(data.scope:split(" ")) do
+        MissingError:assert(p.scopes[scope:lower()], scope, "scopes")
+    end
 
     return self
 end
@@ -416,7 +470,7 @@ function Oauth2:refreshTokens()
     WithinAsyncError:assert(code == 400 or code == 200, data)
 
     data = json.parse(data)
-
+    
     --If it's a 400 token, then the refresh_token was likely invalid. We
     --fully start over from the beginning. If a refresh token is expected,
     --then it's assumed that the bot is using authorization code grant
