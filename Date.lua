@@ -954,12 +954,12 @@ function Date:fromRFC3599(rfc3599)
     
     PatternError:assert(year, rfc3599, RFC3599)
     
-    day    = tonumber(day,    10)
-    year   = tonumber(year,   10)
-    hour   = tonumber(hour,   10)
-    month  = tonumber(month,  10)
-    minute = tonumber(minute, 10)
-    second = tonumber(second, 10)
+    day    = tonumber(day)
+    year   = tonumber(year)
+    hour   = tonumber(hour)
+    month  = tonumber(month)
+    minute = tonumber(minute)
+    second = tonumber(second)
     offset = 0
 
     validateDate(second, minute, hour, day, month, year)
@@ -972,8 +972,8 @@ function Date:fromRFC3599(rfc3599)
         off_hour, off_minute = rfc3599:match(pattern, pattern_end)
 
         PatternError:assert(hour, rfc3599, pattern)
-
-        offset = tonumber(off_hour, 10) * 3600 + tonumber(off_minute, 10) * 60
+        
+        offset = (tonumber(off_hour) or 0) * 3600 + (tonumber(off_minute) or 0) * 60
     end
     
     internal = math.uuid()
