@@ -59,6 +59,12 @@ function Transform:clone()
     return result
 end
 
+function Transform:identity()
+    private[self].transform:setMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+
+    return self
+end
+
 function Transform:invert(modify)
     local p, tmp
 
