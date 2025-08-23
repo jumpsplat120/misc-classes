@@ -1146,6 +1146,7 @@ function Date:clone()
     }
 end
 
+--Shift the date by some amount of time.
 function Date:shift(year, week, day, hour, minute, second)
     local p, pd, overload, date
 
