@@ -209,6 +209,19 @@ function Font:width(text)
     return private[self].font:getWidth(text)
 end
 
+--Take a string, and return a version of it that strips out all unrenderable characters.
+function Font:strip(text)
+    for char, valid in pairs(self:canRender(text)) do
+        if not valid then
+            text = text:gsub(char, "")
+        end
+    end
+
+    return text
+end
+
+--Pass in a string or multiple strings, and get a table of which characters can and
+--cannot be rendered.
 function Font:canRender(...)
     local p = private[self]
 
@@ -218,7 +231,9 @@ function Font:canRender(...)
                 table.foreach({ ... }, convertToStrings)
         )),
         function(_, v)
-            if p.glyphs[v] then return v, true end
+            if p.glyphs[v] ~= nil then
+                return v, p.glyphs[v]
+            end
             
             p.glyphs[v] = p.font:hasGlyphs(v)
             
@@ -227,6 +242,8 @@ function Font:canRender(...)
     )
 end
 
+--Pass in a string or multiple strings, and returns true only if the entire string
+--can be rendered.
 function Font:canRenderAll(...)
     return table.reduce(table.values(self:canRender(...)), anyTrue)
 end
