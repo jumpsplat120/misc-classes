@@ -121,7 +121,7 @@ function Weather:fetch()
             "%{tostring(p.day):padLeft(2, '0)}", {
                 p = p
             }) or "",
-        p = p,
+        p = p
     }))
 
     code, body = connect:fetch()
@@ -226,7 +226,7 @@ end
 function Weather.__set:date(value)
     TypeError:assert(is(value, Date), "date", type(value), Date)
 
-    private[self].alerts = value
+    private[self].date = value
 end
 
 function Weather.__set:alerts(value)
