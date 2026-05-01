@@ -1111,7 +1111,7 @@ end
 function Date:new(opts)
     local p = private[self]
 
-    ConstructorError:assert(is(opts, "table") and opts.internal == internal, Date)
+    ConstructorError:assert(opts.internal == internal, "Date")
 
     p.day    = opts.day
     p.year   = opts.year
