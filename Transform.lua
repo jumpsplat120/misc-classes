@@ -1,29 +1,43 @@
----@type Object
-local Object
-local Transform, private, is, Vector
+local Object, private
+local Transform
 local TypeError, VectorSizeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-is = require("lib.is")
-
-Vector = require("classes.Vector")
-
-VectorSizeError = require("classes.errors.VectorSizeError")
 TypeError       = require("classes.errors.TypeError")
+VectorSizeError = require("classes.errors.VectorSizeError")
 
-Transform = Object:extend()
+Transform = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
     --======CONSTRUCTOR======--
 
-function Transform:new()
+function Transform:new(x, y, angle, sx, sy, ox, oy, kx, ky)
     local p = private[self]
 
-    p.transform = love.math.newTransform()
-    p.inverse   = p.transform:inverse()
+    TypeError:assert(not x or type(x) == "number", "x", type(x), "number")
+    TypeError:assert(not y or type(y) == "number", "y", type(y), "number")
+    TypeError:assert(not sx or type(sx) == "number", "sx", type(sx), "number")
+    TypeError:assert(not sy or type(sy) == "number", "sy", type(sy), "number")
+    TypeError:assert(not ox or type(ox) == "number", "ox", type(ox), "number")
+    TypeError:assert(not oy or type(oy) == "number", "oy", type(oy), "number")
+    TypeError:assert(not kx or type(kx) == "number", "kx", type(kx), "number")
+    TypeError:assert(not ky or type(ky) == "number", "ky", type(ky), "number")
+    TypeError:assert(not angle or type(angle) == "number", "angle", type(angle), "number")
+
+    p.transform = love.math.newTransform(
+        x     or 0,
+        y     or 0,
+        angle or 0,
+        sx    or 1,
+        sy    or sx or 1,
+        ox    or 0,
+        oy    or 0,
+        kx    or 0,
+        ky    or 0
+    )
 end
 
     --======METHODS======--
@@ -36,25 +50,10 @@ function Transform:apply()
     return self
 end
 
-function Transform:remove()
-    local p = private[self]
-    
-    love.graphics.applyTransform(p.inverse)
-
-    return self
-end
-
 function Transform:clone()
-    local p, pr, result
+    local result = getmetatable(self)()
 
-    p = private[self]
-
-    result = Transform()
-
-    pr = private[result]
-
-    pr.transform = p.transform:clone()
-    pr.inverse   = pr.transform:inverse()
+    result.matrix = self.matrix
 
     return result
 end
@@ -65,166 +64,104 @@ function Transform:identity()
     return self
 end
 
-function Transform:invert(modify)
-    local p, tmp
-
-    p = private[self]
-
-    if modify then
-        tmp = p.inverse
-
-        p.inverse   = p.transform
-        p.transform = tmp
-
-        return self
-    end
+function Transform:invert()
+    local p = private[self]
+    
+    p.transform = p.transform:inverse()
 
     return self
-        :clone()
-        :invert(true)
 end
 
-function Transform:translateVector(vector, modify)
-    local p = private[self]
+--Move a `vector` using the transform.
+function Transform:transformVector(vector)
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
 
-    TypeError:assert(is(vector, Vector), "vector", type(vector), Vector)
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
-
-    if modify then
-        return vector:setToValues(p.transform:transformPoint(vector.x, vector.y))
-    end
-
-    return Vector:fromValues(p.transform:transformPoint(vector.x, vector.y))
+    return vector:setToValues(private[self].transform:transformPoint(vector.x, vector.y))
 end
 
-function Transform:inverseTranslateVector(vector, modify)
-    local p = private[self]
+function Transform:inverseTransformVector(vector)
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
 
-    TypeError:assert(is(vector, Vector), "vector", type(vector), Vector)
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
-
-    if modify then
-        return vector:setToValues(p.transform:inverseTransformPoint(vector.x, vector.y))
-    end
-
-    return Vector:fromValues(p.transform:inverseTransformPoint(vector.x, vector.y))
+    return vector:setToValues(private[self].transform:inverseTransformPoint(vector.x, vector.y))
 end
 
-function Transform:translateValues(x, y)
+function Transform:transformValues(x, y)
     local p = private[self]
 
-    TypeError:assert(is(x, "number"), "x", type(x), "number")
-    TypeError:assert(is(y, "number"), "y", type(y), "number")
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
 
     return p.transform:transformPoint(x, y)
 end
 
-function Transform:inverseTranslateValues(x, y)
+function Transform:inverseTransformValues(x, y)
     local p = private[self]
 
-    TypeError:assert(is(x, "number"), "x", type(x), "number")
-    TypeError:assert(is(y, "number"), "y", type(y), "number")
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
 
     return p.transform:inverseTransformPoint(x, y)
 end
 
-function Transform:multiply(transform, modify)
+function Transform:multiply(transform)
     local p = private[self]
 
-    TypeError:assert(is(transform, Transform), "transform", type(transform), Transform)
+    TypeError:assert(type(transform) == "transform", "transform", type(transform), "transform")
 
-    if modify then
-        p.inverse = p.transform
-            :apply(private[transform].transform)
-            :inverse()
+    p.transform:apply(private[transform].transform)
 
-        return self
-    end
-    
     return self
-        :clone()
-        :multiply(transform, true)
 end
 
-function Transform:rotate(angle, modify)
+function Transform:rotate(angle)
     local p = private[self]
 
-    TypeError:assert(is(angle, "number"), "angle", type(angle), "number")
+    TypeError:assert(type(angle) == "angle", "angle", type(angle), "number")
 
-    if modify then
-        p.inverse = p.transform
-            :rotate(angle)
-            :inverse()
+    p.transform:rotate(angle)
 
-        return self
-    end
-    
     return self
-        :clone()
-        :rotate(angle, true)
 end
 
-function Transform:scale(vector, modify)
+function Transform:scale(vector)
     local p = private[self]
 
-    TypeError:assert(is(vector, Vector), "vector", type(vector), Vector)
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
 
-    if modify then
-        p.inverse = p.transform
-            :scale(vector.x, vector.y)
-            :inverse()
+    p.transform:scale(vector:unpack())
 
-        return self
-    end
-    
     return self
-        :clone()
-        :scale(vector, true)
 end
 
-function Transform:shear(vector, modify)
+function Transform:shear(vector)
     local p = private[self]
 
-    TypeError:assert(is(vector, Vector), "vector", type(vector), Vector)
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
-
-    if modify then
-        p.inverse = p.transform
-            :shear(vector.x, vector.y)
-            :inverse()
-
-        return self
-    end
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
     
+    p.transform:shear(vector:unpack())
+
     return self
-        :clone()
-        :shear(vector, true)
 end
 
-function Transform:translate(vector, modify)
+function Transform:translate(vector)
     local p = private[self]
 
-    TypeError:assert(is(vector, Vector), "vector", type(vector), Vector)
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
-
-    if modify then
-        p.inverse = p.transform
-            :translate(vector.x, vector.y)
-            :inverse()
-
-        return self
-    end
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
     
+    p.transform:translate(vector:unpack())
+
     return self
-        :clone()
-        :translate(vector, true)
 end
 
 function Transform:matches(transform)
     local matrix
 
-    TypeError:assert(is(transform, Transform), "transform", type(transform), Transform)
+    TypeError:assert(type(transform) == "transform", "transform", type(transform), "transform")
 
     matrix = transform.matrix
 
@@ -248,10 +185,10 @@ end
     --======SETTERS======--
 
 function Transform.__set:matrix(value)
-    TypeError:assert(is(value, "table"), "matrix", type(value), "table")
+    TypeError:assert(type(value) == "table", "matrix", type(value), "table")
 
     for i, v in ipairs(value) do
-        TypeError:assert(is(v, "number"), "matrix[" .. i .. "]", type(v), "number")
+        TypeError:assert(type(value), "matrix[" .. i .. "]", type(v), "number")
     end
     
     private[self].transform:setMatrix(table.unpack(value))
@@ -260,13 +197,9 @@ end
     --======METAMETHODS======--
 
 function Transform:__tostring()
-    local p = private[self]
-
-    if self.is_instance then return self:tostringHelper(p.transform:getMatrix()) end
-
-    return self:tostringHelper("Class")
+    return self:tostring(private[self].transform:getMatrix())
 end
 
 Transform.__type = "transform"
 
-return Transform
+return Object:create(Transform)
