@@ -1,16 +1,17 @@
----@type Object
-local Object
-local Async, threads, lookup
+local Object, private
+local Async
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-Async = Object:extend()
+Async = Object:init()
+
+    --======PRIVATE FUNCTIONS======--
+
+local threads, lookup
 
 threads = {}
 lookup  = {}
-
-    --======PRIVATE FUNCTIONS======--
 
     --======CONSTRUCTOR======--
 
@@ -117,21 +118,9 @@ function Async:update(dt)
         lookup[tbl.co] = i
     end
 
-    --Finally, actually run each coroutine that needs to be run
+    --Finally, actually run each coroutine that needs to be run.Catch errors and rethrow them.
     for _, co in ipairs(running) do
-        local output = { coroutine.resume(co, table.unpack(threads[lookup[co]].args or {})) }
-
-        if output[1] == false then
-            local lines = debug.traceback(co):split("\n")
-            
-            if lines[3] and lines[3]:startswith("\tclasses/Error.lua") then
-                table.remove(lines, 4)
-                table.remove(lines, 3)
-                table.remove(lines, 2)
-            end
-
-            print(output[2], "\n", table.join(lines, "\n"))
-        end
+        assert(coroutine.resume(co, table.unpack(threads[lookup[co]].args or {})))
     end
 end
 
@@ -142,9 +131,9 @@ end
     --======METAMETHODS======--
 
 function Async:__tostring()
-    return self:tostringHelper(tostring(#threads))
+    return self:tostring(#threads)
 end
 
 Async.__type = "async"
 
-return Async
+return Object:create(Async)
