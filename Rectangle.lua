@@ -1,115 +1,123 @@
-local Object
-local Rectangle, private, Vector, is, Symbol
+local Object, private
+local Rectangle
+local Vector
 local MouseInteractions, Drawable, Emitter
-local VectorSizeError, TypeError, InvalidError
+local ConstructorError, VectorSizeError, TypeError, InvalidError
 
-Symbol  = require("lib.Classy.Symbol")
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Vector = require("classes.Vector")
 
-MouseInteractions = require("classes.mixins.MouseInteractions")
-Drawable          = require("classes.mixins.Drawable")
 Emitter           = require("classes.mixins.Emitter")
+Drawable          = require("classes.mixins.Drawable")
+MouseInteractions = require("classes.mixins.MouseInteractions")
 
-is = require("lib.is")
+TypeError        = require("classes.errors.TypeError")
+InvalidError     = require("classes.errors.InvalidError")
+VectorSizeError  = require("classes.errors.VectorSizeError")
+ConstructorError = require("classes.errors.ConstructorError")
 
-VectorSizeError = require("classes.errors.VectorSizeError")
-InvalidError    = require("classes.errors.InvalidError")
-TypeError       = require("classes.errors.TypeError")
-
-Rectangle = Object:extend()
-
-Rectangle:implement(MouseInteractions, Drawable, Emitter)
+Rectangle = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local symbols
+local modes, internal
+
+modes = {
+    fill = true,
+    line = true
+}
+
+internal = math.uuid()
 
     --======STATIC======--
 
-Rectangle.FILL = Symbol("fill")
-Rectangle.LINE = Symbol("line")
-
-private[Rectangle] = {
-    [Rectangle.FILL] = true,
-    [Rectangle.LINE] = true
-}
-
-symbols = table.join(table.keys(private[Rectangle]), ", ")
-
     --======CONSTRUCTOR======--
 
-function Rectangle:new(a, b, c, d)
+function Rectangle:fromValues(mode, x, y, width, height)
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
+    TypeError:assert(type(mode) == "string", "mode", type(mode), "string")
+    TypeError:assert(type(width) == "number", "width", type(width), "number")
+    TypeError:assert(type(height) == "number", "height", type(height), "number")
+
+    mode = mode:lower()
+
+    InvalidError:assert(modes[mode], mode, "mode", table.join(modes, ", ", " and "))
+
+    internal = math.uuid()
+    
+    return self {
+        mode     = mode,
+        size     = Vector:fromValues(width, height),
+        position = Vector:fromValues(x, y),
+        internal = internal
+    }
+end
+
+function Rectangle:fromVectors(mode, position, size)
+    TypeError:assert(type(mode) == "string", "mode", type(mode), "string")
+    TypeError:assert(type(size) == "vector", "size", type(size), "vector")
+    TypeError:assert(type(position) == "vector", "position", type(position), "vector")
+
+    mode = mode:lower()
+
+    InvalidError:assert(modes[mode], mode, "mode", table.join(modes, ", ", " and "))
+    
+    VectorSizeError:assert(#size == 2, #size, 2)
+    VectorSizeError:assert(#position == 2, #position, 2)
+
+    internal = math.uuid()
+    
+    return self {
+        mode     = mode,
+        size     = size:clone(),
+        position = position:clone(),
+        internal = internal
+    }
+end
+
+function Rectangle:new(opts)
     local p = private[self]
     
+    ConstructorError:assert(opts.internal == internal, "Rectangle")
+
     Drawable.new(self)
     MouseInteractions.new(self)
 
-    if is(a, Vector) and is(b, Vector) then
-        p.position = a:clone()
-        p.size     = b:clone()
-    elseif is(a, "number") and is(b, "number") and is(c, Vector) then
-        p.position = Vector:fromValues(a, b)
-        p.size     = c:clone()
-    elseif is(a, Vector) and is(b, "number") and is(c, "number") then
-        p.position = a:clone()
-        p.size     = Vector:fromValues(b, c)
-    elseif is(a, "number") and is(b, "number") and is(c, "number") and is(d, "number") then
-        p.position = Vector:fromValues(a, b)
-        p.size     = Vector:fromValues(c, d)
-    else
-        local ta, tb, tc, td
+    p.mode   = opts.mode
+    p.size   = opts.size
+    p.offset = Vector:fromValues(0, 0)
 
-        ta = type(a)
-        tb = type(b)
-        tc = type(c)
-        td = type(d)
-
-        if ta == "vector" then
-            TypeError:assert(tb == "number" or tb == "vector", "b", tb, "number/Vector")
-            TypeError:throw("c", tc, "Vector")
-        elseif ta == "number" then
-            TypeError:assert(tb == "number", "b", tb, "number")
-            TypeError:assert(tc == "number" or tc == "vector", "c", tc, "number/Vector")
-            TypeError:throw("d", td, "number")
-        else
-            TypeError:throw("a", ta, "number/Vector")
-        end
-    end
-
-    p.mode = Rectangle.LINE
+    p.drawable.transform:translate(opts.position)
 end
 
     --======METHODS======--
 
-function Rectangle:set(position, size)
-    local p = private[self]
-    
-    if position then p.position:setToVector(position) end
-    if size     then p.size:setToVector(size)         end
-
-    return self
-end
-
 function Rectangle:matches(rectangle)
     local p = private[self]
 
-    return p.position:matches(rectangle.position) and p.size:matches(rectangle.size)
+    if p.drawable.transform:matches(private[rectangle].drawable.transform) then
+    end
+    p.size:matches(rectangle.size)
+    p.offset:matches(rectangle.offset)
 end
 
 function Rectangle:contains(vector)
-    local x, y, p, origin
-
-    p      = private[self]
-    x, y   = vector:unpack()
-    origin = p.drawable.origin
+    local p, vx, vy
     
-    return x >= p.position.x - origin.x and
-           y >= p.position.y - origin.y and
-           x <  p.position.x - origin.x + p.size.x and
-           y <  p.position.y - origin.y + p.size.y
+    p = private[self]
+
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(#vector == 2, #vector, 2)
+
+    vx, vy = p.drawable.transform:inverseTransformValues(vector.x, vector.y)
+
+    return vx >= p.offset.x and
+           vy >= p.offset.y and
+           vx <  p.offset.x + p.size.x and
+           vy <  p.offset.y + p.size.y
 end
 
 function Rectangle:touching(rectangle)
@@ -117,82 +125,139 @@ function Rectangle:touching(rectangle)
 
     p = private[self]
     x, y, w, h = rectangle:unpack()
-    origin = p.drawable.origin
 
-    return p.position.x - origin.x + p.size.x >= x and
-           p.position.x - origin.x <= x + w and
-           p.position.y - origin.y + p.size.y >= y and
-           p.position.y - origin.y <= y + h
+    return p.offset.x + p.size.x >= x and
+           p.offset.x <= x + w and
+           p.offset.y + p.size.y >= y and
+           p.offset.y <= y + h
 end
 
 function Rectangle:draw()
     local p = private[self]
 
-    Drawable.apply(self)
-    
-    love.graphics.rectangle(p.mode.id, p.position.x, p.position.y, p.size.x, p.size.y)
+    love.graphics.push()
 
-    Drawable.remove(self)
+    self:drawable()
+    
+    love.graphics.rectangle(p.mode, p.offset.x, p.offset.y, p.size.x, p.size.y)
+
+    love.graphics.pop()
+
+    return self
 end
 
 function Rectangle:clone()
-    local p = private[self]
+    local p, rectangle
     
-    return Rectangle(p.position:clone(), p.size:clone())
+    p         = private[self]
+    rectangle = getmetatable(self):fromValues(p.mode, 0, 0, p.size.x, p.size.y)
+
+    rectangle.offset:setToVector(p.offset)
+
+    rectangle.transform.matrix = self.transform.matrix
+    
+    return rectangle
 end
 
 function Rectangle:unpack()
     local p = private[self]
 
-    return p.position.x, p.position.y, p.size.x, p.size.y
+    return p.offset.x, p.offset.y, p.size.x, p.size.y
 end
 
     --======GETTERS======--
 
-function Rectangle.__get:size()
-    return private[self].size
+function Rectangle.__get:ox()
+    return private[self].offset.x
 end
 
-function Rectangle.__get:position()
-    return private[self].position
+function Rectangle.__get:oy()
+    return private[self].offset.y
+end
+
+function Rectangle.__get:width()
+    return private[self].size.x
+end
+
+function Rectangle.__get:height()
+    return private[self].size.y
 end
 
 function Rectangle.__get:mode()
     return private[self].mode
 end
 
---======SETTERS======--
-
-function Rectangle.__set:size(value)
-    private[self].size:setToVector(value)
+function Rectangle.__get:size()
+    return private[self].size
 end
 
-function Rectangle.__set:position(value)
-    TypeError:assert(is(value, Vector), "position", type(value), Vector)
-    VectorSizeError:assert(value.size == 2, value.size, 2)
+function Rectangle.__get:offset()
+    return private[self].offset
+end
 
-    private[self].position = value
+--======SETTERS======--
+
+function Rectangle.__set:ox(value)
+    TypeError:assert(type(value) == "number", "ox", type(value), "number")
+
+    private[self].offset.x = value
+end
+
+function Rectangle.__set:oy(value)
+    TypeError:assert(type(value) == "number", "oy", type(value), "number")
+
+    private[self].offset.y = value
+end
+
+function Rectangle.__set:width(value)
+    TypeError:assert(type(value) == "number", "width", type(value), "number")
+
+    private[self].size.x = value
+end
+
+function Rectangle.__set:height(value)
+    TypeError:assert(type(value) == "number", "height", type(value), "number")
+
+    private[self].size.y = value
 end
 
 function Rectangle.__set:mode(value)
-    TypeError:assert(is(value, Symbol), "mode", type(value), Symbol)
-    InvalidError:assert(private[Rectangle][value], value, "mode", symbols)
+    TypeError:assert(type(value) == "string", "mode", type(value), "string")
+
+    value = value:lower()
+
+    InvalidError:assert(modes[value], value, "mode", table.join(modes, ", ", " and "))
 
     private[self].mode = value
+end
+
+function Rectangle.__set:size(value)
+    TypeError:assert(type(value) == "vector", "size", type(value), "vector")
+    VectorSizeError:assert(#value == 2, #value, 2)
+
+    private[self].size:setToVector(value)
+end
+
+function Rectangle.__set:offset(value)
+    TypeError:assert(type(value) == "vector", "offset", type(value), "vector")
+    VectorSizeError:assert(#value == 2, #value, 2)
+
+    private[self].offset:setToVector(value)
 end
 
     --======METAMETHODS======--
 
 function Rectangle:__tostring()
-    local p = private[self]
+    local p, sx, sy, ox, oy
+    
+    p = private[self]
 
-    if self.is_instance then
-        return self:tostringHelper(p.mode.id, p.position.x, p.position.y, p.size.x, p.size.y)
-    else
-        return self:tostringHelper("Class")
-    end
+    sx, sy = p.drawable.transform:transformValues(p.size.x, p.size.y)
+    ox, oy = p.drawable.transform:transformValues(p.offset.x, p.offset.y)
+
+    return self:tostring(p.mode, ox, oy, sx, sy)
 end
 
 Rectangle.__type = "rectangle"
 
-return Rectangle
+return Object:create(Rectangle, MouseInteractions, Drawable, Emitter)
