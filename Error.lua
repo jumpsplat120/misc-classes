@@ -47,23 +47,24 @@ function throw(self, ...)
     p = private[self]
     c = private[Error]
 
-    c.title   = p.type:gsub("_", ""):title()
     c.src     = debug.getinfo(3, "S").short_src
     c.line    = debug.getinfo(3, "l").currentline
+    c.title   = p.type:gsub("_", ""):title()
     c.message = p.message:format(...)
-
-    error(c.message)
 end
 
 --Overwrite the love.errorhandler to specfically use our Error class.
 function love.errorhandler(msg)
-    local trace, err, onscreen_text, full_err_text, c
+    local trace, lines, onscreen_text, full_err_text, c
     
-    c   = private[Error]
-	msg = tostring(msg)
-    err = {}
+    c     = private[Error]
+    lines = {}
 
-    if c.title and c.src and c.line and c.message then
+    --If a table is returned, that's because a stacktrace is being sent,
+    --instead of a string.
+    if type(msg) == "table" then
+        trace = msg[1]
+    elseif c.title and c.src and c.line and c.message then
         trace = debug.traceback(("%sError: %s:%s: %s"):format(
             c.title,
             c.src,
@@ -112,7 +113,7 @@ function love.errorhandler(msg)
     love.graphics.setColor(1, 1, 1)
     love.graphics.setNewFont(14)
 
-    err[#err + 1] = table.random(oopsies) .. "\n"
+    lines[#lines + 1] = table.random(oopsies) .. "\n"
 
     do
         local indent = ""
@@ -123,11 +124,11 @@ function love.errorhandler(msg)
                 indent = "        "
             end
 
-            err[#err + 1] = indent .. line
+            lines[#lines + 1] = indent .. line
         end
     end
     
-	onscreen_text = table.concat(err, "\n")
+	onscreen_text = table.concat(lines, "\n")
 
 	onscreen_text = onscreen_text:gsub("\t", "")
 	onscreen_text = onscreen_text:gsub("%[string \"(.-)\"%]", "%1")
