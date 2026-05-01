@@ -28,9 +28,7 @@ RangeError       = require("classes.errors.RangeError")
 UnsetError       = require("classes.errors.UnsetError")
 TypeError        = require("classes.errors.TypeError")
 
-Color = Object:extend()
-
-Color:implement(Unpack, Ipairs, AsTable)
+Color = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -39,48 +37,22 @@ local SOFT_LIGHT, DIVIDE, ADDITIVE, SUBTRACTIVE
 local DIFFERENCE, DARKEN, LIGHTEN, EXCLUSION
 local internal, blend_modes, blend
 
-SUBTRACTIVE = Symbol("subtractive")
-DIFFERENCE  = Symbol("difference")
-HARD_LIGHT  = Symbol("hard_light")
-SOFT_LIGHT  = Symbol("soft_light")
-EXCLUSION   = Symbol("exclusion")
-MULTIPLY    = Symbol("multiply")
-ADDITIVE    = Symbol("additive")
-OVERLAY     = Symbol("overlay")
-LIGHTEN     = Symbol("lighten")
-SCREEN      = Symbol("screen")
-DARKEN      = Symbol("darken")
-DIVIDE      = Symbol("divide")
-
-Color.SUBTRACTIVE = SUBTRACTIVE
-Color.DIFFERENCE  = DIFFERENCE
-Color.HARD_LIGHT  = HARD_LIGHT
-Color.SOFT_LIGHT  = SOFT_LIGHT
-Color.EXCLUSION   = EXCLUSION
-Color.MULTIPLY    = MULTIPLY
-Color.ADDITIVE    = ADDITIVE
-Color.OVERLAY     = OVERLAY
-Color.LIGHTEN     = LIGHTEN
-Color.SCREEN      = SCREEN
-Color.DARKEN      = DARKEN
-Color.DIVIDE      = DIVIDE
-
 private[Color] = {
-    [SUBTRACTIVE] = true,
-    [DIFFERENCE]  = true,
-    [HARD_LIGHT]  = true,
-    [SOFT_LIGHT]  = true,
-    [EXCLUSION]   = true,
-    [MULTIPLY]    = true,
-    [ADDITIVE]    = true,
-    [OVERLAY]     = true,
-    [LIGHTEN]     = true,
-    [SCREEN]      = true,
-    [DARKEN]      = true,
-    [DIVIDE]      = true
+    subtractive = true,
+    difference  = true,
+    hard_light  = true,
+    soft_light  = true,
+    exclusion   = true,
+    multiply    = true,
+    additive    = true,
+    overlay     = true,
+    lighten     = true,
+    screen      = true,
+    darken      = true,
+    divide      = true
 }
 
-blend_modes = table.join(table.keys(private[Color]), ", ")
+blend_modes = table.join(table.keys(private[Color]), ", ", " and ")
 
 blend = {
     setup = function(a, b, t)
@@ -113,13 +85,13 @@ blend = {
 
         return color
     end,
-    [SUBTRACTIVE] = function(a, b)
+    subtractive = function(a, b)
         return a - b
     end,
-    [DIFFERENCE] = function(a, b)
+    difference = function(a, b)
         return math.abs(b - a)
     end,
-    [HARD_LIGHT] = function(a, b)
+    hard_light = function(a, b)
         if a < 0.5 then
             return blend[MULTIPLY](2 * a, b)
         end
@@ -128,7 +100,7 @@ blend = {
     end,
     --There are many different versions of soft light;
     --this version is pulled from https://codepen.io/Praseetha-KR/pen/grrWba?editors=1010
-    [SOFT_LIGHT] = function(a, b)
+    soft_light = function(a, b)
         if a <= 0.5 then
             return b - (1 - 2 * a) * b * (1 - b)
         end
@@ -137,32 +109,32 @@ blend = {
 
         return b + (2 * a - 1) * (d - b)
     end,
-    [EXCLUSION] = function(a, b)
+    exclusion = function(a, b)
         return a + b - 2 * a * b
     end,
-    [MULTIPLY] = function(a, b)
+    multiply = function(a, b)
         return a * b
     end,
-    [ADDITIVE] = function(a, b)
+    additive = function(a, b)
         return a + b
     end,
-    [OVERLAY] = function(a, b)
+    overlay = function(a, b)
         if b < 0.5 then
-            return blend[MULTIPLY](2 * a, b)
+            return blend.multiply(2 * a, b)
         end
 
-        return blend[SCREEN](2 * a - 1, b)
+        return blend.screen(2 * a - 1, b)
     end,
-    [LIGHTEN] = function(a, b)
+    lighten = function(a, b)
         return math.max(a, b)
     end,
-    [SCREEN] = function(a, b)
+    screen = function(a, b)
         return 1 - (1 - a) * (1 - b)
     end,
-    [DARKEN] = function(a, b)
+    darken = function(a, b)
         return math.min(a, b)
     end,
-    [DIVIDE] = function(a, b)
+    divide = function(a, b)
         if a == 0 then return 0 end
         if b == 0 then return 1 end
 
@@ -309,24 +281,36 @@ end
 
       --======CONSTRUCTOR======--
 
-function Color:fromHSV(h, s, v, a)
-    a = a or 1
+--Create a `color` from `hue`, `saturation`, `value`, and `alpha` values.
+function Color:fromHSV(hue, saturation, value, alpha)
+    local red, green, blue
 
-    TypeError:assert(is(h, "number"), "hue",        type(h), "number")
-    TypeError:assert(is(s, "number"), "saturation", type(s), "number")
-    TypeError:assert(is(v, "number"), "value",      type(v), "number")
-    TypeError:assert(is(a, "number"), "alpha",      type(a), "number")
+    alpha = alpha or 1
 
-    RangeError:assert(0 <= h and h <= 360, h, "hue",        0, 360)
-    RangeError:assert(0 <= s and s <= 1,   s, "saturation", 0, 1)
-    RangeError:assert(0 <= v and v <= 1,   v, "value",      0, 1)
-    RangeError:assert(0 <= a and a <= 1,   a, "alpha",      0, 1)
+    TypeError:assert(type(hue) == "number", "hue", type(hue), "number")
+    TypeError:assert(type(value) == "number", "value", type(value), "number")
+    TypeError:assert(type(alpha) == "number", "alpha", type(alpha), "number")
+    TypeError:assert(type(saturation) == "number", "saturation", type(saturation), "number")
 
-    if h == 360 then h = 0 end
+    RangeError:assert(0 <= hue and hue <= 360, hue, "hue", 0, 360)
+    RangeError:assert(0 <= value and value <= 1, value, "value", 0, 1)
+    RangeError:assert(0 <= alpha and alpha <= 1, alpha, "alpha", 0, 1)
+    RangeError:assert(0 <= saturation and saturation <= 1, saturation, "saturation", 0, 1)
+
+    --A hue of 360 *is* a hue of zero. Technically it goes from 0 to 359.9999999.
+    hue = hue == 360 and 0 or hue
+
+    red, green, blue, alpha = fromHSV(hue, saturation, value, alpha)
 
     internal = math.uuid()
 
-    return Color(internal, fromHSV(h, s, v, a))
+    return self {
+        red      = red,
+        blue     = blue,
+        green    = green,
+        alpha    = alpha,
+        internal = internal
+    }
 end
 
 function Color:fromHSB(h, s, b, a)
@@ -369,22 +353,29 @@ function Color:fromHSL(h, s, l, a)
     return Color(internal, fromHSL(h, s, l, a))
 end
 
-function Color:fromRGB(r, g, b, a)
-    a = a or 1
+--Create a `color` from `red`, `green`, `blue`, and `alpha` values.
+function Color:fromRGB(red, green, blue, alpha)
+    alpha = alpha or 1
 
-    TypeError:assert(is(r, "number"), "red",   type(r), "number")
-    TypeError:assert(is(g, "number"), "green", type(g), "number")
-    TypeError:assert(is(b, "number"), "blue",  type(b), "number")
-    TypeError:assert(is(a, "number"), "alpha", type(a), "number")
+    TypeError:assert(type(red) == "number", "red", type(red), "number")
+    TypeError:assert(type(blue) == "number", "blue", type(blue), "number")
+    TypeError:assert(type(green) == "number", "green", type(green), "number")
+    TypeError:assert(type(alpha) == "number", "alpha", type(alpha), "number")
 
-    RangeError:assert(0 <= r and r <= 1, r, "red",   0, 1)
-    RangeError:assert(0 <= g and g <= 1, g, "green", 0, 1)
-    RangeError:assert(0 <= b and b <= 1, b, "blue",  0, 1)
-    RangeError:assert(0 <= a and a <= 1, a, "alpha", 0, 1)
+    RangeError:assert(0 <= red and red <= 1, red, "red", 0, 1)
+    RangeError:assert(0 <= blue and blue <= 1, blue, "blue", 0, 1)
+    RangeError:assert(0 <= green and green <= 1, green, "green", 0, 1)
+    RangeError:assert(0 <= alpha and alpha <= 1, alpha, "alpha", 0, 1)
 
     internal = math.uuid()
 
-    return Color(internal, r, g, b, a)
+    return self {
+        red      = red,
+        blue     = blue,
+        green    = green,
+        alpha    = alpha,
+        internal = internal
+    }
 end
 
 function Color:fromRGB255(r, g, b, a)
@@ -411,12 +402,13 @@ function Color:fromHex(hex)
     return Color(internal, fromHex(hex))
 end
 
-function Color:new(verify, r, g, b, a)
+--Contstructor.
+function Color:new(opts)
     local p = private[self]
     
-    ConstructorError:assert(verify and verify == internal, Color)
+    ConstructorError:assert(opts.internal == internal, "Color")
     
-    p.values = { r, g, b, a }
+    p.values = { opts.red, opts.green, opts.blue, opts.alpha }
 
     p.previous = {
         foreground = {},
@@ -431,71 +423,16 @@ end
 
     --======METHODS======--
 
-function Color:apply(background)
-    local p, method, xground
-    
-    p = private[self]
-
-    xground = background and "background" or "foreground"
-
-    if p.active[xground] then return self end
-    
-    method = background and "BackgroundColor" or "Color"
-
-    p.previous[xground] = { love.graphics["get" .. method]() }
-    p.active[xground]   = true
-
-    love.graphics["set" .. method](p.values)
+function Color:apply()
+    love.graphics.setColor(private[self].values)
     
     return self
 end
 
-function Color:remove(background)
-    local p, xground
+function Color:applyBackground()
+    love.graphics.setBackgroundColor(private[self].values)
     
-    p = private[self]
-
-    xground = background and "background" or "foreground"
-
-    if not p.active[xground] then return self end
-    
-    p.active[xground] = false
-
-    love.graphics["set" .. (background and "BackgroundColor" or "Color")](p.previous[xground])
-
     return self
-end
-
-function Color:cycleHSVHue(value)
-    local h, s, v, r, g, b, a, val
-
-    TypeError:assert(is(value, "number"), "value", type(value), "number")
-
-    val = private[self].values
-
-    h, s, v, a = toHSV(val[1], val[2], val[3], val[4])
-    r, g, b, a = fromHSV(h + value, s, v, a)
-
-    val[1] = r
-    val[2] = g
-    val[3] = b
-    val[4] = a
-end
-
-function Color:cycleHSLHue(value)
-    local h, s, l, r, g, b, a, val
-
-    TypeError:assert(is(value, "number"), "value", type(value), "number")
-
-    val = private[self].values
-
-    h, s, l, a = toHSL(val[1], val[2], val[3], val[4])
-    r, g, b, a = fromHSL(h + value, s, l, a)
-
-    val[1] = r
-    val[2] = g
-    val[3] = b
-    val[4] = a
 end
 
 function Color:setRGB(r, g, b, a)
@@ -1376,9 +1313,9 @@ end
     --======METAMETHODS======--
 
 function Color:__tostring()
-    return self:tostringHelper(unpack(private[self].values))
+    return self:tostring(table.unpack(private[self].values))
 end
 
 Color.__type = "color"
 
-return Color
+return Object:create(Color, Unpack, Ipairs, AsTable)
