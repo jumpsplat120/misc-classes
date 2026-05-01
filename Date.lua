@@ -1,23 +1,24 @@
----@type Object
-local Object
-local Date, private, Error, is, TL
+local Object, private
+local Date, Error
 local PatternError, ConstructorError, TypeError, UnsetError, InvalidError, RangeError
+local is, TL
 
-TL      = require("lib.string_template")
-is      = require("lib.is")
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+TL      = require("lib.string_template")
+is      = require("lib.is")
+
 Error = require("classes.Error")
 
-Date = Object:extend()
+Date = Object:init()
 
-ConstructorError = require("classes.errors.ConstructorError")
+TypeError        = require("classes.errors.TypeError")
+RangeError       = require("classes.errors.RangeError")
+UnsetError       = require("classes.errors.UnsetError")
 InvalidError     = require("classes.errors.InvalidError")
 PatternError     = require("classes.errors.PatternError")
-UnsetError       = require("classes.errors.UnsetError")
-RangeError       = require("classes.errors.RangeError")
-TypeError        = require("classes.errors.TypeError")
+ConstructorError = require("classes.errors.ConstructorError")
 
 --======PRIVATE FUNCTIONS======--
 
@@ -751,7 +752,7 @@ function Date:fromMSEpoch(ms, offset)
         end
     end
 
-    return Date{
+    return self {
         internal = internal,
         offset = offset,
         minute = minute,
@@ -933,7 +934,7 @@ function Date:fromSecEpoch(seconds, offset)
         end
     end
 
-    return Date{
+    return self {
         internal = internal,
         offset = offset,
         minute = minute,
@@ -978,7 +979,7 @@ function Date:fromRFC3599(rfc3599)
     
     internal = math.uuid()
     
-    return Date{
+    return self {
         internal = internal,
         offset = offset,
         minute = minute,
@@ -1036,7 +1037,7 @@ function Date:fromISO8601(iso8601)
     
     internal = math.uuid()
 
-    return Date{
+    return self {
         internal = internal,
         offset = offset,
         minute = minute,
@@ -1075,7 +1076,7 @@ function Date:fromTable(tbl)
 
     internal = math.uuid()
 
-    return Date{
+    return self {
         internal = internal,
         offset = offset or 0,
         minute = tbl.minute,
@@ -1095,7 +1096,7 @@ function Date:now()
 
     internal = math.uuid()
 
-    return Date{
+    return self {
         internal = internal,
         offset = offset,
         minute = now.min,
@@ -1438,11 +1439,9 @@ end
 function Date:__tostring()
     local p = private[self]
 
-    if self.is_instance then return self:tostringHelper(p.month, p.day, p.year) end
-
-    return self:tostringHelper("Class")
+    return self:tostring(p.month, p.day, p.year)
 end
 
 Date.__type = "date"
 
-return Date
+return Object:create(Date)

@@ -1,6 +1,6 @@
----@type Object
-local Object
-local Cron, Async, private, timers
+local Object, private
+local Cron
+local Async
 local ConstructorError
 
 Object  = require("lib.Classy")
@@ -8,17 +8,15 @@ private = require("lib.Classy.instances")
 
 Async = require("classes.Async")
 
-Cron = Object:extend()
-
 ConstructorError = require("classes.errors.ConstructorError")
 
-timers = {}
+Cron = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local states, internal
+local create, states, internal, timers
 
-local function create(self, delay, callback, ...)
+function create(self, delay, callback, ...)
     local clock = self(delay, callback, ...)
 
     timers[#timers + 1] = clock
@@ -26,9 +24,10 @@ local function create(self, delay, callback, ...)
     return clock
 end
 
+timers = {}
 states = {
-    dead = true,
-    paused = true,
+    dead    = true,
+    paused  = true,
     running = true
 }
 
@@ -37,7 +36,7 @@ states = {
 function Cron:new(delay, callback, verify, ...)
     local p = private[self]
     
-    ConstructorError:assert(verify and verify == internal, Cron)
+    ConstructorError:assert(verify == internal, Cron)
 
     p.args       = { ... }
     p.delay      = delay
@@ -226,11 +225,9 @@ end
 function Cron:__tostring()
     local p = private[self]
 
-    if self.is_instance then return self:tostringHelper(p.state, self.time_until) end
-
-    return self:tostringHelper("Class")
+    return self:tostring(p.state, self.time_until)
 end
 
 Cron.__type = "cron"
 
-return Cron
+return Object:create(Cron)

@@ -1,19 +1,18 @@
-local Game, Object, Symbol, private
+local Object, private, Symbol
+local Game
 local Vector, Date
 local Emitter
 
-Symbol  = require("lib.Classy.Symbol")
 Object  = require("lib.Classy")
+Symbol  = require("lib.Classy.Symbol")
 private = require("lib.Classy.instances")
 
-Vector = require("classes.Vector")
 Date   = require("classes.Date")
+Vector = require("classes.Vector")
 
 Emitter = require("classes.mixins.Emitter")
 
-Game = Object:extend()
-
-Game:implement(Emitter)
+Game = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -774,11 +773,11 @@ function Game.__get:keys()
 end
 
 function Game.__get:width()
-    return private[self].window.size.x
+    return private[self].window.size[1]
 end
 
 function Game.__get:height()
-    return private[self].window.size.y
+    return private[self].window.size[2]
 end
 
 function Game.__get:size()
@@ -802,11 +801,9 @@ end
     --======METAMETHODS======--
 
 function Game:__tostring()
-    if self.is_instance then return self:tostringHelper("Singleton") end
-
-    return self:tostringHelper("Class")
+    return self:tostring("Singleton")
 end
 
 Game.__type = "game"
 
-return Game
+return Object:create(Game, Emitter)
