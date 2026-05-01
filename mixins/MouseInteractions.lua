@@ -1,14 +1,12 @@
----@type Object
-local Object
-local MouseInteractions, private
-local Vector
+local Object, private
+local MouseInteractions, Vector
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Vector = require("classes.Vector")
 
-MouseInteractions = Object:extend()
+MouseInteractions = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -179,7 +177,5 @@ end
     --======SETTERS======--
 
     --======METAMETHODS======--
-
-MouseInteractions.__type = "mouse_interactions"
 
 return MouseInteractions

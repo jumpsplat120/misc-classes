@@ -1,6 +1,5 @@
----@type Object
-local Object
-local Drawable, private, is, Symbol, Color, Vector
+local Object, private, Symbol
+local Drawable, is, Color, Vector
 local TypeError, InvalidError, VectorSizeError
 
 Object  = require("lib.Classy")
@@ -16,7 +15,7 @@ VectorSizeError = require("classes.errors.VectorSizeError")
 InvalidError    = require("classes.errors.InvalidError")
 TypeError       = require("classes.errors.TypeError")
 
-Drawable = Object:extend()
+Drawable = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -238,7 +237,5 @@ function Drawable.__set:scale(value)
 end
 
     --======METAMETHODS======--
-
-Drawable.__type = "drawable"
 
 return Drawable

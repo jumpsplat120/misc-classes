@@ -1,11 +1,10 @@
----@type Object
-local Object
-local Pairs, private
+local Object, private
+local Pairs
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-Pairs = Object:extend()
+Pairs = Object:init()
 
 Pairs.__call = coroutine.wrap(function(self)
     local values = private[self].values or {}
@@ -14,7 +13,5 @@ Pairs.__call = coroutine.wrap(function(self)
         coroutine.yield(k, v)
     end
 end)
-
-Pairs.__type = "pairs"
 
 return Pairs

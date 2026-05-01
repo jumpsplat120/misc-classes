@@ -1,13 +1,12 @@
----@type Object
-local Object
-local Emitter, private, Async
+local Object, private
+local Emitter, Async
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Async = require("classes.Async")
 
-Emitter = Object:extend()
+Emitter = Object:init()
 
 private[Emitter] = {}
 
@@ -133,7 +132,5 @@ end
     --======SETTERS======--
 
     --======METAMETHODS======--
-
-Emitter.__type = "emitter"
 
 return Emitter

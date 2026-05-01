@@ -1,16 +1,13 @@
----@type Object
-local Object
-local private, AsTable
+local Object, private
+local AsTable
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-AsTable = Object:extend()
+AsTable = Object:init()
 
 function AsTable.__get:table()
-    return { table.unpack(private[self].values or {}) }
+    return { table.unpack(private[self].values) }
 end
-
-AsTable.__type = "as_table"
 
 return AsTable

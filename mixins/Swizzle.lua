@@ -1,7 +1,7 @@
-local Object = require("lib.Classy")
+local Object  = require("lib.Classy")
 local private = require("lib.Classy.instances")
 
-local Swizzle = Object:extend()
+local Swizzle = Object:init()
 
 local floor,insert = math.floor, table.insert
 
@@ -144,8 +144,6 @@ function <SwizzleClass>.__get:]] .. key .. [[() end
 "---@field " .. key .. " <SwizzleType> Returns a <Swizzletype> based on the swizzle pattern, or, allows you to set values into those spots of the <Swizzletype>. Takes a <Swizzletype>." }
     end
 end
-
-Swizzle.__type = "swizzle"
 
 --Comment this out if you don't want to print out swizzle documentation.
 --for _, v in ipairs(documentation) do print(v[1]) end

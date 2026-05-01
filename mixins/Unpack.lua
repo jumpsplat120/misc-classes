@@ -1,16 +1,13 @@
----@type Object
-local Object
-local private, Unpack
+local Object, private
+local Unpack
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-Unpack = Object:extend()
+Unpack = Object:init()
 
 function Unpack:unpack()
-    return table.unpack(private[self].values or {})
+    return table.unpack(private[self].values)
 end
-
-Unpack.__type = "unpack"
 
 return Unpack
