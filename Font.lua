@@ -135,7 +135,7 @@ end
 function Font:new(opts)
     local p = private[self]
 
-    ConstructorError:assert(is(opts, "table") and opts.internal == internal, Font)
+    ConstructorError:assert(opts.internal == internal, "Font")
 
     p.glyphs = {}
     p.kerns  = {}
