@@ -1,18 +1,19 @@
----@type Object
-local Object
-local Error, private, is
+local Object, private
+local Error
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
-is      = require("lib.is")
 
-Error = Object:extend()
+Error = Object:init()
 
 private[Error] = {}
 
 --======PRIVATE FUNCTIONS======--
 
-local oopsies = {
+local oopsies, throw
+
+--Custom error messages for the error handler.
+oopsies = {
     "Dang, a crash!",
     "F in chat.",
     "Not again.",
@@ -38,7 +39,9 @@ local oopsies = {
     "Oh wow, this is embarrassing."
 }
 
-local function throw(self, ...)
+--Helper function that derives the relevant information, creates the message from
+--the various passed values, and throws a real error at the right stack level.
+function throw(self, ...)
     local p, c
     
     p = private[self]
@@ -49,29 +52,16 @@ local function throw(self, ...)
     c.line    = debug.getinfo(3, "l").currentline
     c.message = p.message:format(...)
 
-    error(c.message, 3)
+    error(c.message)
 end
 
-local love = {}
-
+--Overwrite the love.errorhandler to specfically use our Error class.
 function love.errorhandler(msg)
     local trace, err, onscreen_text, full_err_text, c
     
-	msg = tostring(msg)
-    
-	if not love.window   then return end
-    if not love.graphics then return end
-    if not love.event    then return end
-
-	if not love.window.isOpen() then
-		local success, status = pcall(love.window.setMode, 800, 600)
-
-        if not success then return end
-        if not status  then return end
-	end
-    
-    err = {}
     c   = private[Error]
+	msg = tostring(msg)
+    err = {}
 
     if c.title and c.src and c.line and c.message then
         trace = debug.traceback(("%sError: %s:%s: %s"):format(
@@ -79,24 +69,38 @@ function love.errorhandler(msg)
             c.src,
             c.line,
             c.message
-        ), 6)
+        ))
     else
-        trace = debug.traceback(msg, 4)
+        trace = debug.traceback(msg)
     end
     
     print(trace)
-    --(trace:before("[love"):trim())
+
+	if not love.window   then return end
+    if not love.graphics then return end
+    if not love.event    then return end
+
+	if not love.graphics.isCreated() or not love.window.isOpen() then
+		local success, status = pcall(love.window.setMode, 800, 600)
+
+        if not success then return end
+        if not status  then return end
+	end
 
     if love.mouse then
 		love.mouse.setVisible(true)
 		love.mouse.setGrabbed(false)
 		love.mouse.setRelativeMode(false)
 		
-        if love.mouse.isCursorSupported() then love.mouse.setCursor() end
+        if love.mouse.isCursorSupported() then
+            love.mouse.setCursor()
+        end
 	end
 
 	if love.joystick then
-		for _, v in ipairs(love.joystick.getJoysticks()) do v:setVibration() end
+		for _, v in ipairs(love.joystick.getJoysticks()) do
+            v:setVibration()
+        end
 	end
 
 	if love.audio then
@@ -111,23 +115,18 @@ function love.errorhandler(msg)
     err[#err + 1] = table.random(oopsies) .. "\n"
 
     do
-        local after_traceback = false
+        local indent = ""
 
-        --Once we hit [love... that's love's native code that
-        --is catching the errors. None of that will ever be relevant
-        --so we can just stop at that point. I'm *pretty* sure that
-        --they're always the last few lines.
         for line in trace:gmatch("(.-)\n") do
-            if line:match("%[love") then break end
+            if line == "stack traceback:" then
+                line   = "\nstack traceback:\n"
+                indent = "        "
+            end
 
-            line = line:gsub("stack traceback:", "\nTraceback\n")
-
-            err[#err + 1] = after_traceback and "    " .. line or line
-
-            if line:match("\nTraceback\n") then after_traceback = true end
+            err[#err + 1] = indent .. line
         end
     end
-
+    
 	onscreen_text = table.concat(err, "\n")
 
 	onscreen_text = onscreen_text:gsub("\t", "")
@@ -135,11 +134,13 @@ function love.errorhandler(msg)
 
 	full_err_text = onscreen_text
 
-	if love.system then onscreen_text = onscreen_text .. "\n\nPress Ctrl+C or tap to copy this error" end
-
+	if love.system then
+        onscreen_text = onscreen_text .. "\n\nPress Ctrl+C or tap to copy this error"
+    end
+    
 	return function()
 		love.event.pump()
-
+        
 		for event, a in love.event.poll() do
 			if event == "quit" then return 1 end
 
@@ -186,24 +187,26 @@ end
 
 --======CONSTRUCTOR======--
 
-function Error:new(type, message)
+function Error:new(t, message)
     local p = private[self]
+    
+    assert(type(t) == "string", "'t' is of type '" .. type(t) .. "' instead of type 'string'.")
+    assert(type(message) == "string", "'message' is of type '" .. type(message) .. "' instead of type 'string'.")
 
-    assert(is(type,    "string"), "Error!")
-    assert(is(message, "string"), "Error!")
-
-    p.type     = type
+    p.type     = t
     p.message  = message
 end
 
 --======METHODS======--
 
+--If `bool` is `false`, then throws the error, along with all passed values.
 function Error:assert(bool, ...)
     if bool then return bool end
     
     throw(self, ...)
 end
 
+--Immediately throw, along with all passed values.
 function Error:throw(...)
     throw(self, ...)
 end
@@ -217,13 +220,9 @@ end
 function Error:__tostring()
     local p = private[self]
 
-    if self.is_instance then
-        return self:tostringHelper(p.type, p.message)
-    else
-        return self:tostringHelper("Class")
-    end
+    return self:tostring(p.type, p.message)
 end
 
 Error.__type = "error"
 
-return Error
+return Object:create(Error)
