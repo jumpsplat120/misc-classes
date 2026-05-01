@@ -1,5 +1,6 @@
 local Object, private
-local Vector, Unpack, Ipairs, AsTable
+local Vector
+local Unpack, Ipairs, AsTable
 local varargs, type
 local TypeError, VectorSizeError, ConstructorError, SizeError, SetOutOfBoundsError
 
@@ -267,7 +268,7 @@ end
 function Vector:new(opts)
     local p = private[self]
     
-    ConstructorError:assert(opts.internal == internal, Vector)
+    ConstructorError:assert(opts.internal == internal, "Vector")
 
     p.values = {}
 
@@ -417,7 +418,7 @@ function Vector:shiftByValues(...)
 
         args[i] = p.values[i] + v
     end
-
+    
     SizeError:assert(p.size == #args, self, p.size, "<...>", #args)
 
     p.values    = args
@@ -664,13 +665,19 @@ function Vector.__set:x(value)
 end
 
 function Vector.__set:y(value)
+    local p = private[self]
+
     TypeError:assert(type(value) == "number", "y", type(value), "number")
+    SetOutOfBoundsError:assert(2 <= p.size, value, 1, p.size, 2)
 
     private[self].values[2] = value
 end
 
 function Vector.__set:z(value)
+    local p = private[self]
+
     TypeError:assert(type(value) == "number", "z", type(value), "number")
+    SetOutOfBoundsError:assert(3 <= p.size, value, 1, p.size, 3)
 
     private[self].values[3] = value
 end
@@ -682,19 +689,30 @@ function Vector.__set:r(value)
 end
 
 function Vector.__set:g(value)
+    local p = private[self]
+
     TypeError:assert(type(value) == "number", "g", type(value), "number")
+    SetOutOfBoundsError:assert(2 <= p.size, value, 1, p.size, 2)
 
     private[self].values[2] = value
 end
 
 function Vector.__set:b(value)
+    local p = private[self]
+
     TypeError:assert(type(value) == "number", "b", type(value), "number")
+    SetOutOfBoundsError:assert(3 <= p.size, value, 1, p.size, 3)
 
     private[self].values[3] = value
 end
 
-function Vector.__set:a()
-    return private[self].values[4]
+function Vector.__set:a(value)
+    local p = private[self]
+
+    TypeError:assert(type(value) == "number", "a", type(value), "number")
+    SetOutOfBoundsError:assert(4 <= p.size, value, 1, p.size, 4)
+
+    private[self].values[4] = value
 end
 
 function Vector.__set:length(value)
