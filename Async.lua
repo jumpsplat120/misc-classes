@@ -10,22 +10,29 @@ Async = Object:init()
 
 local threads, lookup
 
+--`threads` is all of the relevant coroutines, which we iterate over when updating.
 threads = {}
+
+--`lookup` lets us check if the currently running coroutine is an Async one, without
+--needing to iterate over all of threads every time.
 lookup  = {}
 
     --======CONSTRUCTOR======--
 
 function Async:new(f, ...)
-    local co = coroutine.create(f)
+    local co = coroutine.create(function(...)
+        local success, err = xpcall(f, debug.traceback, ...)
+
+        if not success then error(err, 0) end
+    end)
 
     threads[#threads + 1] = {
-        co   = co,
-        args = { ... },
-        time = 0
+        co    = co,
+        args  = { ... },
+        timer = 0
     }
 
-    lookup[co] = #threads
-    
+    lookup[co]    = true
     private[self] = nil
 
     return true
@@ -39,7 +46,7 @@ function Async:wait(delay)
     if not co         then return end
     if not lookup[co] then return end
 
-    threads[lookup[co]].time = delay
+    threads[lookup[co]].timer = delay
 
     coroutine.yield(co)
 end
@@ -72,12 +79,16 @@ function Async:waitForEvent(object, event, timeout, ...)
     if not co         then return end
     if not lookup[co] then return end
     
-    if timeout then threads[lookup[co]].time = timeout end
+    if timeout then
+        threads[co].timer = timeout
+    end
 
     object:once(event, function(...) output = { ... } end, ...)
 
     while not output do
-        if timeout and threads[lookup[co]].time <= 0 then return "timeout" end
+        if timeout and threads[co].timer <= 0 then
+            return "timeout"
+        end
 
         coroutine.yield(co)
     end
@@ -86,41 +97,29 @@ function Async:waitForEvent(object, event, timeout, ...)
 end
 
 function Async:update(dt)
-    local running, discard
+    --Iterate over threads backwards, so we can remove dead ones. Update any time
+    --values if needed. Any function that is ready gets called. Order doesn't matter
+    --since these are *Async* functions, and therefore run asyncronously. That means
+    --each coroutine is theoretically indepenent from the next, even if that's not
+    --literally true.
+    for i = #threads, 1, -1 do
+        if coroutine.status(threads[i].co) == "dead" then
+            lookup[threads[i].co] = nil
 
-    running = {}
-    discard = {}
-
-    --Iterate over threads in order they were declared
-    --Add dead coroutines to discard table to remove later
-    --Update time value if needed
-    --If ready to run, add to run table
-    for i, tbl in ipairs(threads) do
-        if coroutine.status(tbl.co) == "dead" then
-            discard[#discard + 1] = { tbl.co, i }
-        elseif tbl.time > 0 then
-            tbl.time = tbl.time - dt
+            table.remove(threads, i)
+        elseif threads[i].timer > 0 then
+            threads[i].timer = threads[i].timer - dt
         else
-            running[#running + 1] = tbl.co
+            local success, output = coroutine.resume(threads[i].co, table.unpack(threads[i].args or {}))
+
+            --Rethrow the captured error, which will contain the actual stacktrace from
+            --inside the coroutine. We throw a table so that love.errorhandler knows not
+            --to just debug.traceback it again. This should only happen for raw asserts
+            --and errors inside the coroutine.
+            if not success then
+                error({ output }, 0)
+            end
         end
-    end
-
-    --Reverse discard table so we can remove numeric incides without issues
-    --Remove coroutine from lookup table
-    for _, tbl in ipairs(table.reverse(discard)) do
-        lookup[tbl[1]] = nil
-        
-        table.remove(threads, tbl[2])
-    end
-
-    --Update lookup to have new thread index
-    for i, tbl in ipairs(threads) do
-        lookup[tbl.co] = i
-    end
-
-    --Finally, actually run each coroutine that needs to be run.Catch errors and rethrow them.
-    for _, co in ipairs(running) do
-        assert(coroutine.resume(co, table.unpack(threads[lookup[co]].args or {})))
     end
 end
 
