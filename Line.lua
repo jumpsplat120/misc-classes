@@ -119,7 +119,7 @@ end
 function Line:new(tbl)
     local p = private[self]
 
-    ConstructorError:assert(tbl.verify and tbl.verify == internal, Line)
+    ConstructorError:assert(tbl.verify == internal, "Line")
 
     Drawable.new(self)
 
