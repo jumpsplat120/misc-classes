@@ -36,7 +36,7 @@ states = {
 function Cron:new(delay, callback, verify, ...)
     local p = private[self]
     
-    ConstructorError:assert(verify == internal, Cron)
+    ConstructorError:assert(verify == internal, "Cron")
 
     p.args       = { ... }
     p.delay      = delay
