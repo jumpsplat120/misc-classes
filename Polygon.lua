@@ -184,7 +184,7 @@ end
 function Polygon:new(tbl)
     local p = private[self]
 
-    ConstructorError:assert(tbl.verify and tbl.verify == internal, Polygon)
+    ConstructorError:assert(tbl.verify == internal, "Polygon")
 
     Drawable.new(self)
     MouseInteractions.new(self)
