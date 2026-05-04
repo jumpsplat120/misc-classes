@@ -1,168 +1,202 @@
----@type Object
-local Object
-local Image, private
-local is, varargs
-local Drawable, Vector
-local TypeError, VectorSizeError
+local Object, private
+local Image
+local varargs
+local Vector
+local Drawable
+local TypeError, VectorSizeError, ConstructorError
 
-Object = require("lib.Classy")
+Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-is = require("lib.is")
 varargs = require("lib.varargs")
 
+Vector = require("classes.Vector")
+
 Drawable = require("classes.mixins.Drawable")
-Vector   = require("classes.Vector")
 
-TypeError = require("classes.errors.TypeError")
-VectorSizeError = require("classes.errors.VectorSizeError")
+TypeError        = require("classes.errors.TypeError")
+VectorSizeError  = require("classes.errors.VectorSizeError")
+ConstructorError = require("classes.errors.ConstructorError")
 
-Image = Object:extend()
+Image = Object:init()
 
-Image:implement(Drawable)
+private[Image] = {}
 
     --======PRIVATE FUNCTIONS======--
 
+local internal, imagetype
+
+internal = math.uuid()
+
+--Helper function that returns a table that contains the type of image it is,
+--as well as the love image instance. For example, if the image is FileData,
+--then it will return a table containing a key called `file_data` with the
+--original value, and a key called `image` with the love image instance,
+--whereas an `ImageData` would have a key called `image_data` instead. Memoizes
+--images, so that if the same path has already been provided, then we use that
+--love image instance, rather than creating a copy of it.
+function imagetype(value)
+    local t, result
+    
+    t = type(value)
+
+    if t == "userdata" then
+        TypeError:assert(type(value.typeOf) == "function", "image", t, "string/FileData/ImageData/CompressedImageData")
+    end
+
+    if t == "string" then
+        result = { path = value }
+    elseif value:typeOf("FileData") then
+        result = { file_data = value }
+    elseif value:typeOf("ImageData") then
+        result = { image_data = value }
+    elseif value:typeOf("CompressedImageData") then
+        result = { compressed_image_data = value }
+    else
+        TypeError:throw("image", t, "string/FileData/ImageData/CompressedImageData")
+    end
+
+    result.image = private[Image][value] or love.graphics.newImage(value)
+
+    private[Image][value] = result.image
+
+    return result
+end
+
+
     --======CONSTRUCTOR======--
 
-function Image:new(image, a, b, c, d)
+
+function Image:fromValues(image, x, y)
+    local parsed, opts
+
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
+    TypeError:assert(type(image) == "string" or type(image) == "userdata", "image", type(image), "string/FileData/ImageData/CompressedImageData")
+
+    parsed = imagetype(image)
+
+    internal = math.uuid()
+    
+    opts = {
+        position = Vector:fromValues(x, y),
+        internal = internal
+    }
+    
+    opts.path                  = parsed.path
+    opts.image                 = parsed.image
+    opts.file_data             = parsed.file_data
+    opts.image_data            = parsed.image_data
+    opts.compressed_image_data = parsed.compressed_image_data
+
+    return self(opts)
+end
+
+function Image:fromVector(image, position)
+    local parsed, opts
+
+    TypeError:assert(type(position) == "vector", "position", type(position), "vector")
+    TypeError:assert(type(image) == "string" or type(image) == "userdata", "image", type(image), "string/FileData/ImageData/CompressedImageData")
+
+    VectorSizeError:assert(position.size == 2, position.size, 2)
+
+    parsed = imagetype(image)
+
+    internal = math.uuid()
+    
+    opts = {
+        position = position:clone(),
+        internal = internal
+    }
+
+    opts.path                  = parsed.path
+    opts.image                 = parsed.image
+    opts.file_data             = parsed.file_data
+    opts.image_data            = parsed.image_data
+    opts.compressed_image_data = parsed.compressed_image_data
+
+    return self(opts)
+end
+
+function Image:new(opts)
     local p = private[self]
     
+    ConstructorError:assert(opts.internal == internal, "Image")
+
     Drawable.new(self)
-
-    if is(a, Vector) and is(b, Vector) then
-        p.position = a:clone()
-        p.size = b:clone()
-    elseif is(a, "number") and is(b, "number") and is(c, Vector) then
-        p.position = Vector:fromValues(a, b)
-        p.size = c:clone()
-    elseif is(a, Vector) and is(b, "number") and is(c, "number") then
-        p.position = a:clone()
-        p.size = Vector:fromValues(b, c)
-    elseif is(a, "number") and is(b, "number") and is(c, "number") and is(d, "number") then
-        p.position = Vector:fromValues(a, b)
-        p.size = Vector:fromValues(c, d)
-    else
-        local ta, tb, tc, td
-
-        ta = type(a)
-        tb = type(b)
-        tc = type(c)
-        td = type(d)
-
-        if ta == "vector" then
-            TypeError:assert(tb == "number" or tb == "vector", "b", tb, "number/Vector")
-            TypeError:throw("c", tc, "Vector")
-        elseif ta == "number" then
-            TypeError:assert(tb == "number", "b", tb, "number")
-            TypeError:assert(tc == "number" or tc == "vector", "c", tc, "number/Vector")
-            TypeError:throw("d", td, "number")
-        else
-            TypeError:throw("a", ta, "number/Vector")
-        end
-    end
-
-    if is(image, "FileData") then
-        p.file_data = image
-        p.image = love.graphics.newImage(p.file_data)
-    end
     
-    if is(image, "ImageData") then
-        p.image_data = image
-        p.image = love.graphics.newImage(p.image_data)
-    end
+    p.path                  = opts.path
+    p.image                 = opts.image
+    p.file_data             = opts.file_data
+    p.image_data            = opts.image_data
+    p.compressed_image_data = opts.compressed_image_data
 
-    if is(image, "CompressedImageData") then
-        p.compressed_image_data = image
-        p.image = love.graphics.newImage(p.compressed_image_data)
-    end
+    p.size   = Vector:fromValues(p.image:getDimensions())
+    p.offset = Vector:fromValues(0, 0)
 
-    if is(image, "string") then
-        p.path  = image
-        p.image = love.graphics.newImage(p.path)
-    end
-
-    TypeError:assert(p.image, "image", image, "string/CompressedImageData/ImageData/FileData")
-
-    p.dimensions = Vector:fromValues(p.image:getDimensions())
-    p.origin     = p.dimensions * 0.5
+    p.drawable.transform:translate(opts.position)
 end
 
     --======METHODS======--
 
-function Image:set(position, size)
+function Image:draw()
     local p = private[self]
-    
-    if position then
-        p.position:setToVector(position)
-    end
-    
-    if size then
-        p.size:setToVector(size)
-    end
+
+    love.graphics.push()
+
+    self:drawable()
+
+    love.graphics.draw(p.image, p.offset.x, p.offset.y)
+
+    love.graphics.pop()
 
     return self
 end
 
-function Image:draw()
-    local p, scale
-    
-    p = private[self]
-
-    --We calculate the scale at draw time since the
-    --size could be changed using obj.size.x or some
-    --other manner.
-    scale = p.size / p.dimensions
-
-    Drawable.apply(self)
-    
-    --Scales about the center, since that's likely what you want when you're changing
-    --the size of the image.
-    love.graphics.draw(
-        p.image,
-        p.position.x + p.origin.x * scale.x, p.position.y + p.origin.y * scale.y,
-        0,
-        scale.x, scale.y,
-        p.origin.x, p.origin.y
-    )
-
-    Drawable.remove(self)
-end
-
---Pass in any amount of transforms, apply them to determine if the
---image is located within the bounds of the window. Takes into account
---it's own position and Drawable transform.
---NOTE: Does not take into account it's own scale property. That should
---honestly be removed anyways.
---NOTE: Does not take into account shear or rotate for Drawable, since there's
---no easy way to apply those vectors to another without making a whole ass 
---transform object.
---NOTE: This might be a bit lazy/may need to be updated once Drawable is
---updated to use a transform instead of a bunch of different Vectors
---NOTE 2: This assumes AABB, we should probably update to SAT checking for
---rotations and stuff. https://gamedev.stackexchange.com/questions/25397/obb-vs-obb-collision-detection
---TODO: Error checking
+--Take any amount of transforms, and use them to determine if the image
+--is within the bounds of the window. Uses the transforms in order, and 
+--uses it's own internal transform last.
 function Image:isVisible(...)
-    local p, clone, width, height
+    local p, args, width, height, corners
 
     p = private[self]
-
-    clone = p.position:clone()
+    
+    args = { ... }
 
     width, height = love.window.getMode()
 
-    for _, transform in varargs(...) do
-        clone = transform:translateVector(clone, true)
+    --We only need to checck the transforms once, so we do that before looping.
+    for i, transform in varargs(...) do
+        TypeError:assert(type(transform) == "transform", "<...>[" .. i .. "]", type(transform), "transform")
     end
 
-    clone
-        :shiftByVector(-p.drawable.origin)
-        :shiftByVector(p.drawable.translation)
+    --Get each corner of the image's rectangle, pre-transformations.
+    corners = {
+        p.offset:clone(),
+        p.offset + Vector:fromValues(p.size.x, 0),
+        p.offset + Vector:fromValues(0, p.size.y),
+        p.offset + p.size
+    }
 
-    return clone.x + p.size.x >= 0 and
-           clone.y + p.size.y >= 0 and
-           clone.x <= width and
-           clone.y <= height
+    --If any of the corners exist within the window, then we can break early
+    --and return true. The method only verifies that the image is visible, not
+    --that the image is fully within the window. This isn't 100% truly accurate,
+    --since, if an image's bounding box doesn't actually have any art up to the
+    --corner, it might not *literally* be visible. In the case of trying to cull
+    --drawing images that don't exist, this works perfectly fine.
+    for _, vector in ipairs(corners) do
+        for _, transform in ipairs(args) do
+            transform:translateVector(vector)
+        end
+
+        self.transform:transformVector(vector)
+
+        if vector.x >= 0 and vector.y >= 0 and vector.x < width and vector.y < height then
+            return true
+        end
+    end
+
+    return false
 end
 
     --======GETTERS======--
@@ -171,41 +205,24 @@ function Image.__get:size()
     return private[self].size
 end
 
-function Image.__get:position()
-    return private[self].position
+function Image.__get:offset()
+    return private[self].offset
 end
 
     --======SETTERS======--
-
-function Image.__set:size(value)
-    TypeError:assert(is(value, Vector), value, "size", Vector)
-    VectorSizeError:assert(value.size == 2, value.size, 2)
-
-    private[self].size = value
-end
-
-function Image.__set:position(value)
-    TypeError:assert(is(value, Vector), "position", type(value), Vector)
-    VectorSizeError:assert(value.size == 2, value.size, 2)
-
-    private[self].position = value
-end
 
     --======METAMETHODS======--
 
 function Image:__tostring()
     local p = private[self]
 
-    if self.is_instance then
-        if p.path                  then return self:tostringHelper(p.path)                     end
-        if p.image_data            then return self:tostringHelper("love.ImageData")           end
-        if p.compressed_image_data then return self:tostringHelper("love.CompressedImageData") end
-        if p.file_data             then return self:tostringHelper("love.FileData")            end
-    end
-
-    return self:tostringHelper("Class")
+    if p.path       then return self:tostring(p.path)           end
+    if p.file_data  then return self:tostring("love.FileData")  end
+    if p.image_data then return self:tostring("love.ImageData") end
+    
+    return self:tostring("love.CompressedImageData")
 end
 
 Image.__type = "image"
 
-return Image
+return Object:create(Image, Drawable)
