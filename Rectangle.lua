@@ -65,8 +65,8 @@ function Rectangle:fromVectors(mode, position, size)
 
     InvalidError:assert(modes[mode], mode, "mode", table.join(modes, ", ", " and "))
     
-    VectorSizeError:assert(#size == 2, #size, 2)
-    VectorSizeError:assert(#position == 2, #position, 2)
+    VectorSizeError:assert(size.size == 2, size.size, 2)
+    VectorSizeError:assert(position.size == 2, position.size, 2)
 
     internal = math.uuid()
     
@@ -95,6 +95,7 @@ end
 
     --======METHODS======--
 
+    --TODO
 function Rectangle:matches(rectangle)
     local p = private[self]
 
@@ -110,7 +111,7 @@ function Rectangle:contains(vector)
     p = private[self]
 
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
 
     vx, vy = p.drawable.transform:inverseTransformValues(vector.x, vector.y)
 
@@ -120,16 +121,17 @@ function Rectangle:contains(vector)
            vy <  p.offset.y + p.size.y
 end
 
+    --TODO
 function Rectangle:touching(rectangle)
     local x, y, w, h, p, origin
 
     p = private[self]
     x, y, w, h = rectangle:unpack()
 
-    return p.offset.x + p.size.x >= x and
-           p.offset.x <= x + w and
-           p.offset.y + p.size.y >= y and
-           p.offset.y <= y + h
+    return p.offset.x + p.size.x >= x     and
+           p.offset.x            <= x + w and
+           p.offset.y + p.size.y >= y     and
+           p.offset.y            <= y + h
 end
 
 function Rectangle:draw()
@@ -233,14 +235,14 @@ end
 
 function Rectangle.__set:size(value)
     TypeError:assert(type(value) == "vector", "size", type(value), "vector")
-    VectorSizeError:assert(#value == 2, #value, 2)
+    VectorSizeError:assert(value.size == 2, value.size, 2)
 
     private[self].size:setToVector(value)
 end
 
 function Rectangle.__set:offset(value)
     TypeError:assert(type(value) == "vector", "offset", type(value), "vector")
-    VectorSizeError:assert(#value == 2, #value, 2)
+    VectorSizeError:assert(value.size == 2, value.size, 2)
 
     private[self].offset:setToVector(value)
 end

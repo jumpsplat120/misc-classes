@@ -75,14 +75,14 @@ end
 --Move a `vector` using the transform.
 function Transform:transformVector(vector)
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.siez == 2, vector.size, 2)
 
     return vector:setToValues(private[self].transform:transformPoint(vector.x, vector.y))
 end
 
 function Transform:inverseTransformVector(vector)
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
 
     return vector:setToValues(private[self].transform:inverseTransformPoint(vector.x, vector.y))
 end
@@ -118,7 +118,7 @@ end
 function Transform:rotate(angle)
     local p = private[self]
 
-    TypeError:assert(type(angle) == "angle", "angle", type(angle), "number")
+    TypeError:assert(type(angle) == "number", "angle", type(angle), "number")
 
     p.transform:rotate(angle)
 
@@ -129,7 +129,7 @@ function Transform:scale(vector)
     local p = private[self]
 
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
 
     p.transform:scale(vector:unpack())
 
@@ -140,7 +140,7 @@ function Transform:shear(vector)
     local p = private[self]
 
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
     
     p.transform:shear(vector:unpack())
 
@@ -151,7 +151,7 @@ function Transform:translate(vector)
     local p = private[self]
 
     TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(#vector == 2, #vector, 2)
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
     
     p.transform:translate(vector:unpack())
 
