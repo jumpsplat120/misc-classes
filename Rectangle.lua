@@ -197,7 +197,7 @@ function Rectangle.__get:offset()
     return private[self].offset
 end
 
---======SETTERS======--
+    --======SETTERS======--
 
 function Rectangle.__set:ox(value)
     TypeError:assert(type(value) == "number", "ox", type(value), "number")
