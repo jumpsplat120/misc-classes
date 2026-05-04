@@ -42,35 +42,34 @@ oopsies = {
 --Helper function that derives the relevant information, creates the message from
 --the various passed values, and throws a real error at the right stack level.
 function throw(self, ...)
-    local p, c
-    
-    p = private[self]
-    c = private[Error]
+    local p = private[self]
 
-    c.src     = debug.getinfo(3, "S").short_src
-    c.line    = debug.getinfo(3, "l").currentline
-    c.title   = p.type:gsub("_", ""):title()
-    c.message = p.message:format(...)
+    private[Error].trace = debug.traceback(("%sError: %s:%s: %s"):format(
+        table.concat(table.foreach(p.type:split("_"), function(i, v) return i, v:title() end), ""),
+        debug.getinfo(3, "S").short_src,
+        debug.getinfo(3, "l").currentline,
+        p.message:format(...)
+    ), 3)
+    
+    --We should never see this.
+    error("I frew up.")
 end
 
 --Overwrite the love.errorhandler to specfically use our Error class.
 function love.errorhandler(msg)
-    local trace, lines, onscreen_text, full_err_text, c
+    local trace, lines, onscreen_text, full_err_text
     
-    c     = private[Error]
     lines = {}
-
-    --If a table is returned, that's because a stacktrace is being sent,
-    --instead of a string.
-    if type(msg) == "table" then
+    
+    --If a table is returned, that's an error from within a coroutine, likely
+    --part of Async and Game. If all the Error stuff exists, then we use that,
+    --otherwise we use the message pulled from the table, since that's the
+    --inner stacktrace. If it's neither, then it's an error from outside the
+    --coroutines, and so we just trace normally.
+    if private[Error].trace then
+        trace = private[Error].trace
+    elseif type(msg) == "table" then
         trace = msg[1]
-    elseif c.title and c.src and c.line and c.message then
-        trace = debug.traceback(("%sError: %s:%s: %s"):format(
-            c.title,
-            c.src,
-            c.line,
-            c.message
-        ))
     else
         trace = debug.traceback(msg)
     end
