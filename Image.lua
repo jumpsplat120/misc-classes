@@ -24,9 +24,16 @@ private[Image] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local internal, imagetype
+local internal, valid_image_types, imagetype
 
 internal = math.uuid()
+
+valid_image_types = {
+    string              = true,
+    FileData            = true,
+    ImageData           = true,
+    CompressedImageData = true
+}
 
 --Helper function that returns a table that contains the type of image it is,
 --as well as the love image instance. For example, if the image is FileData,
@@ -40,20 +47,14 @@ function imagetype(value)
     
     t = type(value)
 
-    if t == "userdata" then
-        TypeError:assert(type(value.typeOf) == "function", "image", t, "string/FileData/ImageData/CompressedImageData")
-    end
-
     if t == "string" then
         result = { path = value }
-    elseif value:typeOf("FileData") then
+    elseif t == "FileData" then
         result = { file_data = value }
-    elseif value:typeOf("ImageData") then
+    elseif t == "ImageData" then
         result = { image_data = value }
-    elseif value:typeOf("CompressedImageData") then
+    elseif t == "CompressedImageData" then
         result = { compressed_image_data = value }
-    else
-        TypeError:throw("image", t, "string/FileData/ImageData/CompressedImageData")
     end
 
     result.image = private[Image][value] or love.graphics.newImage(value)
@@ -66,13 +67,12 @@ end
 
     --======CONSTRUCTOR======--
 
-
 function Image:fromValues(image, x, y)
     local parsed, opts
 
     TypeError:assert(type(x) == "number", "x", type(x), "number")
     TypeError:assert(type(y) == "number", "y", type(y), "number")
-    TypeError:assert(type(image) == "string" or type(image) == "userdata", "image", type(image), "string/FileData/ImageData/CompressedImageData")
+    TypeError:assert(valid_image_types[type(image)], "image", type(image), "string/FileData/ImageData/CompressedImageData")
 
     parsed = imagetype(image)
 
@@ -96,7 +96,7 @@ function Image:fromVector(image, position)
     local parsed, opts
 
     TypeError:assert(type(position) == "vector", "position", type(position), "vector")
-    TypeError:assert(type(image) == "string" or type(image) == "userdata", "image", type(image), "string/FileData/ImageData/CompressedImageData")
+    TypeError:assert(valid_image_types[type(image)], "image", type(image), "string/FileData/ImageData/CompressedImageData")
 
     VectorSizeError:assert(position.size == 2, position.size, 2)
 
