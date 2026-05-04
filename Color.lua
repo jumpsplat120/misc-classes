@@ -378,22 +378,30 @@ function Color:fromRGB(red, green, blue, alpha)
     }
 end
 
-function Color:fromRGB255(r, g, b, a)
-    a = a or 1
+--Create a `color` from `red`, `green`, `blue`, and `alpha` values that are
+--non-normalized; that is, between 0 - 255.
+function Color:fromRGB255(red, green, blue, alpha)
+    alpha = alpha or 1
 
-    TypeError:assert(is(r, "number"), "red",   type(r), "number")
-    TypeError:assert(is(g, "number"), "green", type(g), "number")
-    TypeError:assert(is(b, "number"), "blue",  type(b), "number")
-    TypeError:assert(is(a, "number"), "alpha", type(a), "number")
+    TypeError:assert(type(red) == "number", "red", type(red), "number")
+    TypeError:assert(type(blue) == "number", "blue", type(blue), "number")
+    TypeError:assert(type(green) == "number", "green", type(green), "number")
+    TypeError:assert(type(alpha) == "number", "alpha", type(alpha), "number")
 
-    RangeError:assert(0 <= r and r <= 255, r, "red",   0, 1)
-    RangeError:assert(0 <= g and g <= 255, g, "green", 0, 1)
-    RangeError:assert(0 <= b and b <= 255, b, "blue",  0, 1)
-    RangeError:assert(0 <= a and a <= 1, a, "alpha", 0, 1)
+    RangeError:assert(0 <= red and red <= 255, red, "red", 0, 255)
+    RangeError:assert(0 <= blue and blue <= 255, blue, "blue", 0, 255)
+    RangeError:assert(0 <= green and green <= 255, green, "green", 0, 255)
+    RangeError:assert(0 <= alpha and alpha <= 1, alpha, "alpha", 0, 1)
 
     internal = math.uuid()
 
-    return Color(internal, r / 255, g / 255, b / 255, a)
+    return self {
+        red      = red / 255,
+        blue     = blue / 255,
+        green    = green / 255,
+        alpha    = alpha,
+        internal = internal
+    }
 end
 
 function Color:fromHex(hex)
