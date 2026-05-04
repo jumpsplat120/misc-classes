@@ -101,9 +101,9 @@ function Game:new()
     }
 
     p.mouse = {
-        focused = false,
+        focused  = false,
+        buttons  = {},
         position = Vector:fromValues(0, 0),
-        buttons = {}
     }
     
 
