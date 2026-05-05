@@ -15,7 +15,6 @@ Drawable = Object:init()
 
     --======CONSTRUCTOR======--
 
----@see Drawable.new
 function Drawable:new()
     local p = private[self]
 
@@ -27,7 +26,6 @@ end
 
     --======METHODS======--
 
----@see Drawable.drawable
 function Drawable:drawable()
     local p = private[self].drawable
 
