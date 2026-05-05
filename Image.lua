@@ -24,7 +24,7 @@ private[Image] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local internal, image_types_lut, image_types, imagetype
+local internal, image_types_lut, image_types
 
 internal = math.uuid()
 
@@ -37,87 +37,67 @@ image_types_lut = {
 
 image_types = table.join(table.keys(image_types_lut), ", ", " and ")
 
---Helper function that returns a table that contains the type of image it is,
---as well as the love image instance. For example, if the image is FileData,
---then it will return a table containing a key called `file_data` with the
---original value, and a key called `image` with the love image instance,
---whereas an `ImageData` would have a key called `image_data` instead. Memoizes
---images, so that if the same path has already been provided, then we use that
---love image instance, rather than creating a copy of it.
-function imagetype(value)
-    local t, result
-    
-    t = type(value)
-
-    if t == "string" then
-        result = { path = value }
-    elseif t == "FileData" then
-        result = { file_data = value }
-    elseif t == "ImageData" then
-        result = { image_data = value }
-    elseif t == "CompressedImageData" then
-        result = { compressed_image_data = value }
-    end
-
-    result.image = private[Image][value] or love.graphics.newImage(value)
-
-    private[Image][value] = result.image
-
-    return result
-end
-
-
     --======CONSTRUCTOR======--
 
 function Image:fromValues(image, x, y)
-    local parsed, opts
+    local parsed, opts, t, image_ref
+
+    t = type(image)
 
     TypeError:assert(type(x) == "number", "x", type(x), "number")
     TypeError:assert(type(y) == "number", "y", type(y), "number")
-    TypeError:assert(image_types_lut[type(image)], "image", type(image), image_types)
-
-    parsed = imagetype(image)
+    TypeError:assert(image_types_lut[t], "image", t, image_types)
 
     internal = math.uuid()
     
-    opts = {
+    --If the image already exists in the private[Image] table, then we just use
+    --that one, rather than recreating it. That way, if a user tries to create
+    --100 copies of "character.png", it's only actually created a single time,
+    --and simply referenced the other 99 times.
+    image_ref = private[Image][image] or love.graphics.newImage(image)
+
+    private[Image][image] = image_ref
+
+    return self {
+        path                  = t == "string" and image or nil,
+        file_data             = t == "FileData" and image or nil,
+        image_data            = t == "ImageData" and image or nil,
+        compressed_image_data = t == "CompressedImageData" and image or nil,
+        image    = image_ref,
         position = Vector:fromValues(x, y),
         internal = internal
     }
-    
-    opts.path                  = parsed.path
-    opts.image                 = parsed.image
-    opts.file_data             = parsed.file_data
-    opts.image_data            = parsed.image_data
-    opts.compressed_image_data = parsed.compressed_image_data
-
-    return self(opts)
 end
 
 function Image:fromVector(image, position)
-    local parsed, opts
+    local parsed, opts, t, image_ref
+
+    t = type(image)
 
     TypeError:assert(type(position) == "vector", "position", type(position), "vector")
-    TypeError:assert(image_types_lut[type(image)], "image", type(image), image_types)
+    TypeError:assert(image_types_lut[t], "image", t, image_types)
 
     VectorSizeError:assert(position.size == 2, position.size, 2)
 
-    parsed = imagetype(image)
-
     internal = math.uuid()
     
-    opts = {
+    --If the image already exists in the private[Image] table, then we just use
+    --that one, rather than recreating it. That way, if a user tries to create
+    --100 copies of "character.png", it's only actually created a single time,
+    --and simply referenced the other 99 times.
+    image_ref = private[Image][image] or love.graphics.newImage(image)
+
+    private[Image][image] = image_ref
+
+    return self {
+        path                  = t == "string" and image or nil,
+        file_data             = t == "FileData" and image or nil,
+        image_data            = t == "ImageData" and image or nil,
+        compressed_image_data = t == "CompressedImageData" and image or nil,
+        image    = image_ref,
         position = position:clone(),
         internal = internal
     }
-
-    opts.path                  = parsed.path
-    opts.image                 = parsed.image
-    opts.file_data             = parsed.file_data
-    opts.image_data            = parsed.image_data
-    opts.compressed_image_data = parsed.compressed_image_data
-
-    return self(opts)
 end
 
 function Image:new(opts)
@@ -155,9 +135,6 @@ function Image:draw()
     return self
 end
 
---Take any amount of transforms, and use them to determine if the image
---is within the bounds of the window. Uses the transforms in order, and 
---uses it's own internal transform last.
 function Image:isVisible(...)
     local p, args, width, height, corners
 
