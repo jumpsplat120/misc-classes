@@ -1,14 +1,14 @@
-local Object, private, Symbol
+local Object, private
 local Game
-local Vector, Date
+local Symbol, Vector, Date
 local Emitter
 
 Object  = require("lib.Classy")
-Symbol  = require("lib.Classy.Symbol")
 private = require("lib.Classy.instances")
 
 Date   = require("classes.Date")
 Vector = require("classes.Vector")
+Symbol = require("classes.Symbol")
 
 Emitter = require("classes.mixins.Emitter")
 
@@ -51,6 +51,8 @@ function Game:new()
     p = private[self]
 
     if singleton then return singleton end
+
+    Emitter.new(self)
 
     singleton = self
     
@@ -806,4 +808,7 @@ end
 
 Game.__type = "game"
 
-return Object:create(Game, Emitter)
+---@type Game.Class
+local Class = Object:create(Game, Emitter)
+
+return Class
