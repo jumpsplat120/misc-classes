@@ -19,7 +19,6 @@ private[Emitter] = {}
 
     --======CONSTRUCTOR======--
 
----@see Emitter.new
 function Emitter:new()
     local p = private[self]
 
@@ -33,7 +32,6 @@ end
 
     --======METHODS======--
 
----@see Emitter.on
 function Emitter:on(event, callback, ...)
     local p = private[self].emitter
 
@@ -51,7 +49,6 @@ function Emitter:on(event, callback, ...)
     return self
 end
 
----@see Emitter.once
 function Emitter:once(event, callback, ...)
     local p = private[self].emitter
 
@@ -69,7 +66,6 @@ function Emitter:once(event, callback, ...)
     return self
 end
 
----@see Emitter.onSync
 function Emitter:onSync(event, callback, ...)
     local p = private[self].emitter
 
@@ -87,7 +83,6 @@ function Emitter:onSync(event, callback, ...)
     return self
 end
 
----@see Emitter.onceSync
 function Emitter:onceSync(event, callback, ...)
     local p = private[self].emitter
 
@@ -105,7 +100,6 @@ function Emitter:onceSync(event, callback, ...)
     return self
 end
 
----@see Emitter.dispatch
 function Emitter:dispatch(event, ...)
     local p, args, exists
     
@@ -139,7 +133,6 @@ function Emitter:dispatch(event, ...)
     return self
 end
 
----@see Emitter.dispatchSync
 function Emitter:dispatchSync(event, ...)
     local p, args, exists
     
@@ -173,7 +166,6 @@ function Emitter:dispatchSync(event, ...)
     return self
 end
 
----@see Emitter.discard
 function Emitter:discard(event, callback)
     local p = private[self]
     
