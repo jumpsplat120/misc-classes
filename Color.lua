@@ -253,7 +253,6 @@ to = {
 
       --======CONSTRUCTOR======--
 
----@see Color.fromHSV
 function Color:fromHSV(hue, saturation, value, alpha)
     local red, green, blue
 
@@ -285,7 +284,6 @@ function Color:fromHSV(hue, saturation, value, alpha)
     }
 end
 
----@see Color.fromHSB
 function Color:fromHSB(hue, saturation, brightness, alpha)
     TypeError:assert(type(brightness) == "number", "brightness", type(brightness), "number")
 
@@ -296,7 +294,6 @@ function Color:fromHSB(hue, saturation, brightness, alpha)
     return self:fromHSV(hue, saturation, brightness, alpha)
 end
 
----@see Color.fromHSL
 function Color:fromHSL(hue, saturation, lightness, alpha)
     local red, green, blue
 
@@ -328,7 +325,6 @@ function Color:fromHSL(hue, saturation, lightness, alpha)
     }
 end
 
----@see Color.fromRGB
 function Color:fromRGB(red, green, blue, alpha)
     alpha = alpha or 1
 
@@ -353,7 +349,6 @@ function Color:fromRGB(red, green, blue, alpha)
     }
 end
 
----@see Color.fromRGB255
 function Color:fromRGB255(red, green, blue, alpha)
     alpha = alpha or 1
 
@@ -378,7 +373,6 @@ function Color:fromRGB255(red, green, blue, alpha)
     }
 end
 
----@see Color.fromHex
 function Color:fromHex(hex)
     internal = math.uuid()
 
@@ -396,11 +390,12 @@ function Color:fromHex(hex)
     }
 end
 
----@see Color.new
 function Color:new(opts)
     local p = private[self]
     
     ConstructorError:assert(opts.internal == internal, "Color")
+    
+    Ipairs.new(self)
     
     p.values = {
         opts.red,
@@ -422,21 +417,18 @@ end
 
     --======METHODS======--
 
----@see Color.apply
 function Color:apply()
     love.graphics.setColor(private[self].values)
     
     return self
 end
 
----@see Color.applyBackground
 function Color:applyBackground()
     love.graphics.setBackgroundColor(private[self].values)
     
     return self
 end
 
----@see Color.matches
 function Color:matches(color)
     TypeError:assert(type(color) == "color", "color", type(color), "color")
 
@@ -447,7 +439,6 @@ function Color:matches(color)
     return true
 end
 
----@see Color.blend
 function Color:blend(color, mode, percentage)
     local p = private[self]
 
@@ -480,7 +471,6 @@ function Color:blend(color, mode, percentage)
     return self
 end
 
----@see Color.clone
 function Color:clone()
     local p = private[self]
 
