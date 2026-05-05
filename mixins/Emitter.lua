@@ -1,128 +1,189 @@
 local Object, private
-local Emitter, Async
+local Emitter
+local Async
+local TypeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Async = require("classes.Async")
 
+TypeError = require("classes.errors.TypeError")
+
+---@type Emitter.Mixin
 Emitter = Object:init()
 
 private[Emitter] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local exists, build, run
-
-function build(self, event, func, once, sync, ...)
-    local p = private[self]
-    
-    if not table.deepget(p, "events", event) then
-        table.deepset(p, "events", event, {})
-    end
-
-    table.insert(p.events[event], {
-        ready  = true,
-        args   = { ... },
-        buffer = {},
-        func   = func,
-        once   = once,
-        sync   = sync,
-        obj    = self
-    })
-end
-
-function run(self, listener, ...)
-    listener.func(table.unpack(table.imerge(self, listener.args, { ... })))
-end
-
---If p.events is nil, then that means no listeners have been created.
---If p.events[event] is nil, then that means that specific lister hasn't been created.
---However, if it's empty, then it was created at one point, then removed.
-function exists(p, event)
-    if p.events         == nil then return false end
-    if p.events[event]  == nil then return false end
-    if #p.events[event] == 0   then return false end
-
-    return true
-end
-
     --======CONSTRUCTOR======--
 
-function Emitter:on(event, callback, ...)
-    build(self, event, callback, false, false, ...)
+---@see Emitter.new
+function Emitter:new()
+    local p = private[self]
 
-    return self
-end
-
-function Emitter:once(event, callback, ...)
-    build(self, event, callback, true, false, ...)
-
-    return self
-end
-
-function Emitter:onSync(event, callback, ...)
-    build(self, event, callback, false, true, ...)
-
-    return self
-end
-
-function Emitter:onceSync(event, callback, ...)
-    build(self, event, callback, true, true, ...)
-
-    return self
+    p.emitter = {
+        sync  = {},
+        async = {}
+    }
 end
 
     --======STATIC======--
 
     --======METHODS======--
 
+---@see Emitter.on
+function Emitter:on(event, callback, ...)
+    local p = private[self].emitter
+
+    TypeError:assert(type(event) == "string", "event", type(event), "string")
+    TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+
+    p.async[event] = p.async[event] or {}
+
+    p.async[event][callback] = {
+        self = self,
+        args = { ... },
+        once = false
+    }
+
+    return self
+end
+
+---@see Emitter.once
+function Emitter:once(event, callback, ...)
+    local p = private[self].emitter
+
+    TypeError:assert(type(event) == "string", "event", type(event), "string")
+    TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+    
+    p.async[event] = p.async[event] or {}
+
+    p.async[event][callback] = {
+        self = self,
+        args = { ... },
+        once = true
+    }
+
+    return self
+end
+
+---@see Emitter.onSync
+function Emitter:onSync(event, callback, ...)
+    local p = private[self].emitter
+
+    TypeError:assert(type(event) == "string", "event", type(event), "string")
+    TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+    
+    p.sync[event] = p.sync[event] or {}
+    
+    p.sync[event][callback] = {
+        self = self,
+        args = { ... },
+        once = false
+    }
+
+    return self
+end
+
+---@see Emitter.onceSync
+function Emitter:onceSync(event, callback, ...)
+    local p = private[self].emitter
+
+    TypeError:assert(type(event) == "string", "event", type(event), "string")
+    TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+    
+    p.sync[event] = p.sync[event] or {}
+    
+    p.sync[event][callback] = {
+        self = self,
+        args = { ... },
+        once = true
+    }
+
+    return self
+end
+
+---@see Emitter.dispatch
 function Emitter:dispatch(event, ...)
-    local p, args
+    local p, args, exists
     
-    p    = private[self]
+    p    = private[self].emitter
     args = { ... }
-    
-    if not exists(p, event) then return self end
 
-    p.events[event] = table.filter(p.events[event], function(_, listener)
-        if listener.sync then return true end
+    --If there are no async events, early exit.
+    if not p.async[event] then return self end
 
-        Async(run, self, listener, table.unpack(args))
+    --Call every async event that matches, and remove ones that only run once.
+    for callback, data in pairs(p.async[event]) do
+        Async(callback, self, table.unpack(table.imerge(data.args, args)))
 
-        return not listener.once
-    end)
+        if data.once then
+            p.async[event][callback] = nil
+        end
+    end
+
+    --Check to see if the table has at least one item in it.
+    for _ in pairs(p.async[event]) do
+        exists = true
+
+        break
+    end
+
+    --If the table has no items, remove the table.
+    if not exists then
+        p.async[event] = nil
+    end
 
     return self
 end
 
+---@see Emitter.dispatchSync
 function Emitter:dispatchSync(event, ...)
-    local p, args
+    local p, args, exists
     
-    p    = private[self]
+    p    = private[self].emitter
     args = { ... }
-    
-    if not exists(p, event) then return self end
 
-    p.events[event] = table.filter(p.events[event], function(_, listener)
-        if not listener.sync then return true end
+    --If there are no sync events, early exit.
+    if not p.sync[event] then return self end
 
-        listener.func(table.unpack(table.imerge(self, listener.args, args)))
+    --Call every sync event that matches, and remove ones that only run once.
+    for callback, data in pairs(p.sync[event]) do
+        callback(self, table.unpack(table.imerge(data.args, args)))
 
-        return not listener.once
-    end)
+        if data.once then
+            p.sync[event][callback] = nil
+        end
+    end
+
+    --Check to see if the table has at least one item in it.
+    for _ in pairs(p.sync[event]) do
+        exists = true
+
+        break
+    end
+
+    --If the table has no items, remove the table.
+    if not exists then
+        p.sync[event] = nil
+    end
 
     return self
 end
 
-function Emitter:discardEvent(event, func)
+---@see Emitter.discard
+function Emitter:discard(event, callback)
     local p = private[self]
     
-    if not exists(p, event) then return self end
-    
-    p.events[event] = table.filter(p.events[event], function(_, listener)
-        return listener.obj ~= self and listener.func ~= func
-    end)
+    if p.sync[event] then
+        p.sync[event][callback] = nil
+    end
+
+    if p.async[event] then
+        p.async[event][callback] = nil
+    end
 
     return self
 end
