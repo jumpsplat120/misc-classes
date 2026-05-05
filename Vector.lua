@@ -584,7 +584,7 @@ function Vector:clone()
     internal = math.uuid()
     
     return getmetatable(self) {
-        values = private[self].values,
+        values  = private[self].values,
         internal = internal
     }
 end
@@ -648,8 +648,6 @@ function Vector.__get:length()
     return self.magnitude
 end
 
---Whenever the values of a vector are changed, the magnitude is nil'd out. Otherwise,
---we fetch the memoized value, to avoid having to recalculate.
 function Vector.__get:magnitude()
     local p = private[self]
 
