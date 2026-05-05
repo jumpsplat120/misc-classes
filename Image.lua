@@ -24,16 +24,18 @@ private[Image] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local internal, valid_image_types, imagetype
+local internal, image_types_lut, image_types, imagetype
 
 internal = math.uuid()
 
-valid_image_types = {
+image_types_lut = {
     string              = true,
     FileData            = true,
     ImageData           = true,
     CompressedImageData = true
 }
+
+image_types = table.join(table.keys(image_types_lut), ", ", " and ")
 
 --Helper function that returns a table that contains the type of image it is,
 --as well as the love image instance. For example, if the image is FileData,
@@ -72,7 +74,7 @@ function Image:fromValues(image, x, y)
 
     TypeError:assert(type(x) == "number", "x", type(x), "number")
     TypeError:assert(type(y) == "number", "y", type(y), "number")
-    TypeError:assert(valid_image_types[type(image)], "image", type(image), "string/FileData/ImageData/CompressedImageData")
+    TypeError:assert(image_types_lut[type(image)], "image", type(image), image_types)
 
     parsed = imagetype(image)
 
@@ -96,7 +98,7 @@ function Image:fromVector(image, position)
     local parsed, opts
 
     TypeError:assert(type(position) == "vector", "position", type(position), "vector")
-    TypeError:assert(valid_image_types[type(image)], "image", type(image), "string/FileData/ImageData/CompressedImageData")
+    TypeError:assert(image_types_lut[type(image)], "image", type(image), image_types)
 
     VectorSizeError:assert(position.size == 2, position.size, 2)
 
@@ -225,4 +227,7 @@ end
 
 Image.__type = "image"
 
-return Object:create(Image, Drawable)
+---@type Image.Class
+local Class = Object:create(Image, Drawable)
+
+return Class
