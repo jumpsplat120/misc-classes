@@ -83,6 +83,7 @@ function Rectangle:new(opts)
     
     ConstructorError:assert(opts.internal == internal, "Rectangle")
 
+    Emitter.new(self)
     Drawable.new(self)
     MouseInteractions.new(self)
 
@@ -262,4 +263,7 @@ end
 
 Rectangle.__type = "rectangle"
 
-return Object:create(Rectangle, MouseInteractions, Drawable, Emitter)
+---@type Rectangle.Class
+local Class = Object:create(Rectangle, MouseInteractions, Drawable, Emitter)
+
+return Class
