@@ -8,11 +8,14 @@ private = require("lib.Classy.instances")
 Color     = require("classes.Color")
 Transform = require("classes.Transform")
 
+---@type Drawable.Mixin
 Drawable = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
     --======CONSTRUCTOR======--
+
+---@see Drawable.new
 function Drawable:new()
     local p = private[self]
 
@@ -24,6 +27,7 @@ end
 
     --======METHODS======--
 
+---@see Drawable.drawable
 function Drawable:drawable()
     local p = private[self].drawable
 
