@@ -1,11 +1,13 @@
 local Object, private
-local MouseInteractions, Vector
+local MouseInteractions
+local Vector
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Vector = require("classes.Vector")
 
+---@type MouseInteractions.Mixin
 MouseInteractions = Object:init()
 
     --======PRIVATE FUNCTIONS======--
