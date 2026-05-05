@@ -1,10 +1,8 @@
 local Object, private
 local Symbol
 
----@type Classy.BaseObject
-Object = require(file_path)
----@type Classy.private
-private = require(file_path .. ".instances")
+Object  = require("lib.Classy")
+private = require("lib.Classy.instances")
 
 Symbol = Object:init()
 
