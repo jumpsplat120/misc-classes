@@ -270,6 +270,8 @@ function Vector:new(opts)
     
     ConstructorError:assert(opts.internal == internal, "Vector")
 
+    Ipairs.new(self)
+    
     p.values = {}
 
     for i, v in ipairs(opts.values) do
@@ -361,7 +363,7 @@ end
 --Shift this vector by the corresponding values in another vector. This should
 --be done instead of `vec1 = vec1 + vec2`, since it avoids needing to create a
 --new vector.
-function Vector:shiftByVector(vector)
+function Vector:translateVector(vector)
     local pa, pb
 
     pa = private[self]
@@ -382,7 +384,7 @@ end
 --Shift this vector by the corresponding values in a table. This should
 --be done instead of `vec = vec + tbl`, since it avoids needing to create a
 --new vector.
-function Vector:shiftByTable(tbl)
+function Vector:translateTable(tbl)
     local p, values
     
     p      = private[self]
@@ -405,7 +407,7 @@ function Vector:shiftByTable(tbl)
 end
 
 --Shift this vector by the corresponding values provided.
-function Vector:shiftByValues(...)
+function Vector:translateValues(...)
     local p, args
     
     p    = private[self]
@@ -822,4 +824,7 @@ end
 
 Vector.__type = "vector"
 
-return Object:create(Vector, Unpack, Ipairs, AsTable)
+---@type Vector.Class
+local Class = Object:create(Vector, Unpack, Ipairs, AsTable)
+
+return Class
