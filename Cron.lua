@@ -1,233 +1,124 @@
 local Object, private
 local Cron
-local Async
-local ConstructorError
+local Emitter
+local ConstructorError, TypeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-Async = require("classes.Async")
+Emitter = require("classes.mixins.Emitter")
 
+TypeError        = require("classes.errors.TypeError")
 ConstructorError = require("classes.errors.ConstructorError")
 
 Cron = Object:init()
 
+private[Cron] = {}
+
     --======PRIVATE FUNCTIONS======--
 
-local create, states, internal, timers
+local internal
 
-function create(self, delay, callback, ...)
-    local clock = self(delay, callback, ...)
-
-    timers[#timers + 1] = clock
-
-    return clock
-end
-
-timers = {}
-states = {
-    dead    = true,
-    paused  = true,
-    running = true
-}
+internal = math.uuid()
 
     --======CONSTRUCTOR======--
 
-function Cron:new(delay, callback, verify, ...)
+function Cron:after(delay, ...)
+    local p = private[self]
+
+    TypeError:assert(type(delay) == "number", "delay", type(delay), "number")
+
+    internal = math.uuid()
+
+    return self {
+        args     = { ... },
+        once     = true,
+        delay    = delay,
+        internal = internal
+    }
+end
+
+function Cron:every(delay, ...)
+    local p = private[self]
+
+    TypeError:assert(type(delay) == "number", "delay", type(delay), "number")
+
+    internal = math.uuid()
+
+    return self {
+        args     = { ... },
+        once     = false,
+        delay    = delay,
+        internal = internal
+    }
+end
+
+function Cron:new(opts)
     local p = private[self]
     
-    ConstructorError:assert(verify == internal, "Cron")
+    ConstructorError:assert(opts.internal == internal, "Cron")
 
-    p.args       = { ... }
-    p.delay      = delay
-    p.state      = "paused"
-    p.callback   = callback
-    p.countdown  = delay
-    p.thennables = {}
-end
+    Emitter.new(self)
+    
+    p.time  = 0
+    p.args  = opts.args
+    p.once  = opts.once
+    p.delay = opts.delay
 
-function Cron:after(delay, callback, ...)
-    internal = math.uuid()
-
-    return create(self, delay, callback, internal, ...):play():stop()
-end
-
-function Cron:every(delay, callback, ...)
-    internal = math.uuid()
-
-    return create(self, delay, callback, internal, ...):play()
+    private[Cron][self] = true
 end
 
     --======METHODS======--
 
 function Cron:update(dt)
-    if self.is_instance then return end
+    if getmetatable(self) ~= Object then return end
 
-    table.map(timers, function(i, clock)
-        local p = private[clock]
+    for cron, _ in pairs(private[Cron]) do
+        local p = private[cron]
 
-        if not p.state == "running" then return i, clock end
+        p.time = p.time + dt
 
-        p.countdown = p.countdown - dt
+        if p.time >= p.delay then
+            p.time = 0
 
-        if p.countdown > 0 then return i, clock end
+            cron:dispatch("cron.tick", table.unpack(p.args))
+            cron:dispatchSync("cron.tick", table.unpack(p.args))
 
-        clock:execute()
-
-        p.countdown = p.delay
-
-        if not p.last_run    then return i, clock end
-        if #p.thennables > 0 then return i, clock end
-
-        clock:stop(true)
-    end)
-end
-
-function Cron:stop(immediately)
-    local p = private[self]
-
-    if p.state == "dead" then return self end
-    
-    if immediately then p.state = "dead" else p.last_run = true end
-    
-    return self
-end
-
-function Cron:start()
-    local p = private[self]
-
-    if p.last_run then p.last_run = false end
-    
-    if p.state == "running" then return self end
-    if p.state == "dead"    then return self end
-    
-    p.state = "running"
-
-    return self
-end
-
-function Cron:pause()
-    local p = private[self]
-
-    if p.state == "paused" then return self end
-    if p.state == "dead"   then return self end
-
-    p.state = "paused"
-
-    return self
-end
-
-function Cron:play()
-    local p = private[self]
-
-    if p.state == "running" then return self end
-    if p.state == "dead"    then return self end
-    
-    p.state = "running"
-
-    return self
-end
-
-function Cron:execute()
-    local p = private[self]
-
-    if p.state == "dead" then return self end
-
-    Async(function(...)
-        p.callback(...)
-
-        if #p.thennables > 0 then
-            local new = table.remove(p.thennables)
-
-            if not p.last_run then
-                table.insert(p.thennables, 1, {
-                    callback = p.callback,
-                    delay    = p.delay,
-                    args     = p.args
-                })
+            if p.once then
+                private[Cron][self] = nil
             end
-
-            p.args       = new.args
-            p.delay      = new.delay
-            p.callback   = new.callback
-            p.countdown  = new.delay
         end
-    end, table.unpack(p.args))
+    end
 end
 
-function Cron:andThen(delay, callback, ...)
-    local p = private[self]
-
-    table.insert(p.thennables, 1, {
-        delay    = delay,
-        callback = callback,
-        args     = { ... }
-    })
-
-    return self
+function Cron:destroy()
+    private[Cron][self] = nil
 end
 
     --======GETTERS======--
-
-function Cron.__get:state()
-    return private[self].state
-end
 
 function Cron.__get:delay()
     return private[self].delay
 end
 
 function Cron.__get:time_until()
-    return math.max(private[self].countdown, 0)
+    local p = private[self]
+
+    return p.delay - p.time
 end
 
     --======SETTERS======--
-
-function Cron.__set:state(value)
-    local p = private[self]
-
-    if p.state == "dead" then return end
-
-    value = tostring(value)
-    
-    if type(value) ~= "string"   then return end
-    if not states[value:lower()] then return end
-
-    p.state = value
-end
-
-function Cron.__set:delay(value)
-    local p = private[self]
-
-    if p.state == "dead" then return end
-    
-    value = tonumber(value)
-
-    if type(value) ~= "number" then return end
-
-    p.delay = value:clamp(0, math.huge)
-end
-
-function Cron.__set:time_until(value)
-    local p = private[self]
-
-    if p.state == "dead" then return end
-    
-    value = tonumber(value)
-
-    if type(value) ~= "number" then return end
-
-    p.countdown = math.max(value, 0)
-end
 
     --======METAMETHODS======--
 
 function Cron:__tostring()
     local p = private[self]
 
-    return self:tostring(p.state, self.time_until)
+    return self:tostring(self.time_until)
 end
 
 Cron.__type = "cron"
 
-return Object:create(Cron)
+local Class = Object:create(Cron, Emitter)
+
+return Class
