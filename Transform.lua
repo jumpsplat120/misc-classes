@@ -202,4 +202,7 @@ end
 
 Transform.__type = "transform"
 
-return Object:create(Transform)
+---@type Transform.Class
+local Class = Object:create(Transform)
+
+return Class
