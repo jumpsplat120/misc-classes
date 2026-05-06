@@ -142,6 +142,7 @@ function ChoiceNode:new(parent, position, size, font)
 
     self:recurve(p.parent)
 
+    --TODO: Renamed mouseinteraction events
     p.body:onSync("doubleclick", event, "doubleclick", self)
     p.body:onSync("fullclick", event, "fullclick", self)
     p.body:onSync("mouseover", event, "mouseover", self)

@@ -123,6 +123,7 @@ function Node:new(position, size)
     p.plus.outline.horz.color = p.plus.outline.vert.color
     p.plus.body.horz.color    = p.plus.body.vert.color
 
+    --TODO: Renamed mouseinteraction events
     p.body:onSync("doubleclick", event, "doubleclick", self)
     p.body:onSync("fullclick", event, "fullclick", self)
     p.body:onSync("mouseover", event, "mouseover", self)

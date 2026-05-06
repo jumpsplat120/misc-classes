@@ -125,6 +125,7 @@ function Piece:new(name, icon, team, size)
         colored   = love.graphics.newSpriteBatch(p.image)
     }
     
+    --TODO: Renamed mouseinteraction events
     p.hitbox:onSync("doubleclick", event, "doubleclick", self)
     p.hitbox:onSync("fullclick", event, "fullclick", self)
     p.hitbox:onSync("mouseover", event, "mouseover", self)

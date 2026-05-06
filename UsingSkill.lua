@@ -73,6 +73,7 @@ function UsingSkill:new(position, size, font)
     p.textinput:onSync("cursor_blink", event, "text_input.cursor_blink", self)
     --TODO: Get text to slide left/right or w/e when typing so we can always see text
     p.textinput:onSync("text_changed")
+    --TODO: Renamed mouseinteraction events
     p.hitbox:onSync("mousedown", hitboxClicked, self)
 end
 
