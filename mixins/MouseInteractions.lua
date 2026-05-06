@@ -48,12 +48,12 @@ function MouseInteractions:update(dt)
     touching = self:contains(p.mouse_interactions.current.position)
 
     if touching then
-        self:dispatchSync("hover", p.mouse_interactions.current.position)
-        self:dispatch("hover", p.mouse_interactions.current.position)
+        self:dispatch("mouse.hover", p.mouse_interactions.current.position)
+        self:dispatchSync("mouse.hover", p.mouse_interactions.current.position)
 
         if p.mouse_interactions.previous.hold_down and p.mouse_interactions.current.hold_down then
-            self:dispatchSync("holddown", p.mouse_interactions.current.position)
-            self:dispatch("holddown", p.mouse_interactions.current.position)
+            self:dispatch("mouse.hold", p.mouse_interactions.current.position)
+            self:dispatchSync("mouse.hold", p.mouse_interactions.current.position)
         end
     end
 
@@ -78,12 +78,12 @@ function MouseInteractions:mousepressed(x, y, ...)
 
     if not touching then return end
     
-    self:dispatchSync("mousedown", x, y, ...)
-    self:dispatch("mousedown", x, y, ...)
+    self:dispatch("mouse.pressed", x, y, ...)
+    self:dispatchSync("mouse.pressed", x, y, ...)
     
     if p.mouse_interactions.current.down_on and p.mouse_interactions.current.down_on + 0.2 >= os.clock() then
-        self:dispatchSync("doubleclick", x, y, ...)
-        self:dispatch("doubleclick", x, y, ...)
+        self:dispatch("mouse.doubleclick", x, y, ...)
+        self:dispatchSync("mouse.doubleclick", x, y, ...)
     end
     
     p.mouse_interactions.previous.hold_down = false
@@ -103,19 +103,19 @@ function MouseInteractions:mousereleased(x, y, ...)
     touching = self:contains(p.mouse_interactions.current.position)
     
     if touching then
-        self:dispatchSync("mouseup", x, y, ...)
-        self:dispatch("mouseup", x, y, ...)
+        self:dispatch("mouse.released", x, y, ...)
+        self:dispatchSync("mouse.released", x, y, ...)
     end
     
     if p.mouse_interactions.current.dragged_in and touching then
-        self:dispatchSync("dropin",  x, y, ...)
-        self:dispatch("dropin", x, y, ...)
+        self:dispatch("mouse.dropin", x, y, ...)
+        self:dispatchSync("mouse.dropin",  x, y, ...)
     elseif p.mouse_interactions.current.hold_down and touching then
-        self:dispatchSync("fullclick",  x, y, ...)
-        self:dispatch("fullclick",  x, y, ...)
+        self:dispatch("mouse.click",  x, y, ...)
+        self:dispatchSync("mouse.click",  x, y, ...)
     elseif p.mouse_interactions.current.hold_down and not touching then
-        self:dispatchSync("dropout",  x, y, ...)
-        self:dispatch("dropout",  x, y, ...)
+        self:dispatch("mouse.dropout",  x, y, ...)
+        self:dispatchSync("mouse.dropout",  x, y, ...)
     end
 
     p.mouse_interactions.previous.mouse_in = p.mouse_interactions.current.mouse_in
@@ -136,27 +136,27 @@ function MouseInteractions:mousemoved(x, y, ...)
     touching = self:contains(p.mouse_interactions.current.position)
     
     if touching then
-        self:dispatchSync("mouseover", x, y, ...)
-        self:dispatch("mouseover", x, y, ...)
+        self:dispatch("mouse.over", x, y, ...)
+        self:dispatchSync("mouse.over", x, y, ...)
     end
     
     if p.mouse_interactions.current.hold_down and touching then
-        self:dispatchSync("drag", x, y, ...)
-        self:dispatch("drag", x, y, ...)
+        self:dispatch("mouse.drag", x, y, ...)
+        self:dispatchSync("mouse.drag", x, y, ...)
     elseif p.mouse_interactions.current.hold_down and not touching and p.mouse_interactions.previous.mouse_in then
-        self:dispatchSync("dragout", x, y, ...)
-        self:dispatch("dragout", x, y, ...)
-    elseif p.mouse_interactions.current.hold_down and touching and not p.mouse_interactions.previous.mouse_in then        
-        self:dispatchSync("dragin", x, y, ...)
-        self:dispatch("dragin", x, y, ...)
+        self:dispatch("mouse.dragout", x, y, ...)
+        self:dispatchSync("mouse.dragout", x, y, ...)
+    elseif p.mouse_interactions.current.hold_down and touching and not p.mouse_interactions.previous.mouse_in then
+        self:dispatch("mouse.dragin", x, y, ...)
+        self:dispatchSync("mouse.dragin", x, y, ...)
     end
 
     if not p.mouse_interactions.previous.mouse_in and touching then
-        self:dispatchSync("mousein", p.mouse_interactions.current.position)
-        self:dispatch("mousein", p.mouse_interactions.current.position)
+        self:dispatch("mouse.entered", p.mouse_interactions.current.position)
+        self:dispatchSync("mouse.entered", p.mouse_interactions.current.position)
     elseif p.mouse_interactions.previous.mouse_in and not touching then
-        self:dispatchSync("mouseout", p.mouse_interactions.current.position)
-        self:dispatch("mouseout", p.mouse_interactions.current.position)
+        self:dispatch("mouse.left", p.mouse_interactions.current.position)
+        self:dispatchSync("mouse.left", p.mouse_interactions.current.position)
     end
 
     p.mouse_interactions.previous.mouse_in = p.mouse_interactions.current.mouse_in
@@ -168,8 +168,8 @@ end
 function MouseInteractions:wheelmoved(...)
     if not self:contains(private[self].mouse_interactions.current.position) then return self end
 
-    self:dispatchSync("scroll", ...)
-    self:dispatch("scroll", ...)
+    self:dispatch("mouse.scrollon", ...)
+    self:dispatchSync("mouse.scrollon", ...)
 
     return self
 end
