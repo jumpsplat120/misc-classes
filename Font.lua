@@ -1,53 +1,28 @@
----@type Object
-local Object
-local Font, Symbol, private
+local Object, private
+local Font
+local is, TL
 local TypeError, InvalidError, FileTypeError, ConstructorError, GlyphRenderError
 local utf8
-local is, TL
 
-Object = require("lib.Classy")
-Symbol = require("lib.Classy.Symbol")
+Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+is = require("lib.is")
+TL = require("lib.string_template")
+
+TypeError        = require("classes.errors.TypeError")
+InvalidError     = require("classes.errors.InvalidError")
+FileTypeError    = require("classes.errors.FileTypeError")
 GlyphRenderError = require("classes.errors.GlyphRenderError")
 ConstructorError = require("classes.errors.ConstructorError")
-FileTypeError    = require("classes.errors.FileTypeError")
-InvalidError     = require("classes.errors.InvalidError")
-TypeError        = require("classes.errors.TypeError")
 
 utf8 = require("utf8")
 
-TL = require("lib.string_template")
-is = require("lib.is")
-
-Font = Object:extend()
+Font = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local NORMAL, LIGHT, MONO, NONE
-local NEAREST, LINEAR
-local symbols, internal
-
-NEAREST = Symbol("nearest")
-LINEAR  = Symbol("linear")
-
-NORMAL = Symbol("normal")
-LIGHT  = Symbol("light")
-MONO   = Symbol("mono")
-NONE   = Symbol("none")
-
-private[Font] = {
-    hinting = {
-        [NORMAL] = true,
-        [LIGHT]  = true,
-        [MONO]   = true,
-        [NONE]   = true
-    },
-    filter = {
-        [NEAREST] = true,
-        [LINEAR]  = true
-    }
-}
+local symbols
 
 symbols = {
     hinting = table.join(table.keys(private[Font].hinting), ", "),
@@ -72,7 +47,7 @@ end
     --======CONSTRUCTOR======--
 
 function Font:fromDefault(size, hinting, dpi)
-    hinting = hinting or NORMAL
+    hinting = hinting or "normal"
     size    = size or 12
     dpi     = dpi or love.graphics.getDPIScale()
     
@@ -84,7 +59,7 @@ function Font:fromDefault(size, hinting, dpi)
 
     internal = math.uuid()
     
-    return Font{
+    return self {
         internal  = internal,
         hinting   = hinting,
         type      = "default",
