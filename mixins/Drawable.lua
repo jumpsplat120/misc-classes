@@ -1,12 +1,15 @@
 local Object, private
 local Drawable
 local Color, Transform
+local TypeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Color     = require("classes.Color")
 Transform = require("classes.Transform")
+
+TypeError = require("classes.errors.TypeError")
 
 ---@type Drawable.Mixin
 Drawable = Object:init()
@@ -29,7 +32,7 @@ end
 function Drawable:drawable()
     local p = private[self].drawable
 
-    p.color:apply()   
+    p.color:apply()
     p.transform:apply()
 end
 
@@ -44,6 +47,18 @@ function Drawable.__get:transform()
 end
 
     --======SETTERS======--
+
+function Drawable.__set:color(value)
+    TypeError:assert(type(value) == "color", "color", type(value), "color")
+
+    private[self].drawable.color = value
+end
+
+function Drawable.__set:transform(value)
+    TypeError:assert(type(value) == "transform", "transform", type(value), "transform")
+
+    private[self].drawable.transform = value
+end
 
     --======METAMETHODS======--
 
