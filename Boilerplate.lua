@@ -1,11 +1,10 @@
----@type Object
-local Object
-local NEW_CLASS, private
+local Object, private
+local NEW_CLASS
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-NEW_CLASS = Object:extend()
+NEW_CLASS = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -25,11 +24,12 @@ end
 function NEW_CLASS:__tostring()
     local p = private[self]
 
-    if self.is_instance then return self:tostringHelper() end
-
-    return self:tostringHelper("Class")
+    return self:tostring()
 end
 
 NEW_CLASS.__type = "NEW_CLASS"
 
-return NEW_CLASS
+---@type NEW_CLASS.Class
+local Class = Object:create(NEW_CLASS)
+
+return Class
