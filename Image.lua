@@ -126,7 +126,7 @@ function Image:draw()
 
     love.graphics.push()
 
-    self:drawable()
+    Drawable.apply(self)
 
     love.graphics.draw(p.image, p.offset.x, p.offset.y)
 
