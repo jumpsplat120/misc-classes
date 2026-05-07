@@ -29,7 +29,7 @@ end
 
     --======METHODS======--
 
-function Drawable:drawable()
+function Drawable:apply()
     local p = private[self].drawable
 
     p.color:apply()
