@@ -1,201 +1,24 @@
 local Object, private
 local Animation
+local Easings
 local Emitter, Drawable
+local TypeError, PositiveError, VectorSizeError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
+Easings = require("classes.Easings")
+
 Emitter  = require("classes.mixins.Emitter")
 Drawable = require("classes.mixins.Drawable")
+
+TypeError = require("classes.errors.TypeError")
+PositiveError = require("classes.errors.PositiveError")
+VectorSizeError = require("classes.errors.VectorSizeError")
 
 Animation = Object:init()
 
     --======PRIVATE FUNCTIONS======--
-
-local easings, pow, sqrt, sin, cos, pi
-local c1, c2, c3, c4, c5, n1, d1
-
-sqrt = math.sqrt
-pow  = math.pow
-sin  = math.sin
-cos  = math.cos
-pi   = math.pi
-c1   = 1.70158
-c2   = c1 * 1.525
-c3   = c1 + 1
-c4   = 2 * pi / 3
-c5   = 2 * pi / 4.5
-n1   = 7.5625
-d1   = 2.75
-
-easings = {
-    linear = function(x)
-        return x
-    end,
-    quadIn = function(x)
-        return x * x
-    end,
-    quadOut = function(x)
-        local minus = 1 - x
-
-        return 1 - minus * minus
-    end,
-    quadInOut = function(x)
-        if x < 0.5 then
-            return 2 * x * x
-        end
-
-        return 1 - pow(-2 * x + 2, 2) / 2
-    end,
-    cubicIn = function(x)
-        return x * x * x
-    end,
-    cubicOut = function(x)
-        return 1 - pow(1 - x, 3)
-    end,
-    cubicInOut = function(x)
-        if x < 0.5 then
-            return 4 * x * x * x
-        end
-
-        return 1 - pow(-2 * x + 2, 3) / 2
-    end,
-    quartIn = function(x)
-        return x * x * x * x
-    end,
-    quartOut = function(x)
-        return 1 - pow(1 - x, 4)
-    end,
-    quartInOut = function(x)
-        if x < 0.5 then
-            return 8 * x * x * x * x
-        end
-
-        return 1 - pow(-2 * x + 2, 4) / 2
-    end,
-    quintIn = function(x)
-        return x * x * x * x * x
-    end,
-    quintOut = function(x)
-        return 1 - pow(1 - x, 5)
-    end,
-    quintInOut = function(x)
-        if x < 0.5 then
-            return 16 * x * x * x * x * x
-        end
-
-        return 1 - pow(-2 * x + 2, 5) / 2
-    end,
-    sineIn = function(x)
-        return 1 - cos((x * pi) / 2)
-    end,
-    sineOut = function(x)
-        return sin((x * pi) / 2);
-    end,
-    sineInOut = function(x)
-        return -(cos(pi * x) - 1) / 2
-    end,
-    expoIn = function(x)
-        if x == 0 then return 0 end
-
-        return pow(2, 10 * x - 10)
-    end,
-    expoOut = function(x)
-        if x == 1 then return 1 end
-
-        return 1 - pow(2, -10 * x)
-    end,
-    expoInOut = function(x)
-        if x == 0 then return 0 end
-        if x == 1 then return 1 end
-        
-        if x < 0.5 then
-            return pow(2, 20 * x - 10) / 2
-        end
-
-        return (2 - pow(2, -20 * x + 10)) / 2
-    end,
-    circIn = function(x)
-        return 1 - sqrt(1 - pow(x, 2))
-    end,
-    circOut = function(x)
-        return sqrt(1 - pow(x - 1, 2))
-    end,
-    circInOut = function(x)
-        if x < 0.5 then
-            return (1 - sqrt(1 - pow(2 * x, 2))) / 2
-        end
-
-        return (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2
-    end,
-    backIn = function(x)
-        return c3 * x * x * x - c1 * x * x
-    end,
-    backOut = function(x)
-        return 1 + c3 * pow(x - 1, 3) + c1 * pow(x - 1, 2)
-    end,
-    backInOut = function(x)
-        if x < 0.5 then
-            return (pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
-        end
-
-        return (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2
-    end,
-    elasticIn = function(x)
-        if x == 0 then return 0 end
-        if x == 1 then return 1 end
-
-        return -pow(2, 10 * x - 10) * sin((x * 10 - 10.75) * c4)
-    end,
-    elasticOut = function(x)
-        if x == 0 then return 0 end
-        if x == 1 then return 1 end
-
-        return pow(2, -10 * x) * sin((x * 10 - 0.75) * c4) + 1
-    end,
-    elasticInOut = function(x)
-        if x == 0 then return 0 end
-        if x == 1 then return 1 end
-
-        if x < 0.5 then
-            return -(pow(2, 20 * x - 10) * sin((20 * x - 11.125) * c5)) / 2
-        end
-
-        return (pow(2, -20 * x + 10) * sin((20 * x - 11.125) * c5)) / 2 + 1
-    end,
-    bounceIn = function(x)
-        return 1 - easings.bounceOut(1 - x)
-    end,
-    bounceOut = function(x)
-        if x < 1 / d1 then
-            return n1 * x * x
-        end
-
-        if x < 2 / d1 then
-            x = x - 1.5
-
-            return n1 * (x / d1) * x + 0.75
-        end
-
-        if x < 2.5 / d1 then
-            x = x - 2.25
-
-            return n1 * (x / d1) * x + 0.9375
-        end
-
-        x = x - 2.625
-
-        return n1 * (x / d1) * x + 0.984375
-        
-    end,
-    bounceInOut = function(x)
-        if x < 0.5 then
-            return (1 - easings.bounceOut(1 - 2 * x)) / 2
-        end
-
-        return (1 + easings.bounceOut(2 * x - 1)) / 2
-    end
-}
 
     --======CONSTRUCTOR======--
 
@@ -217,16 +40,18 @@ end
     --======METHODS======--
 
 function Animation:update(dt)
-    local p, adjust
+    local p, step, adjust
     
     p = private[self]
 
     if not p.playing then return end
 
+    step = p.steps[p.step]
+
     p.time = p.time + dt * p.speed
     
-    for i, v in ipairs(p.steps[p.step]) do
-        if p.time >= p.steps[p.step].seconds then
+    for i, v in ipairs(step) do        
+        if p.time >= step.seconds then
             if p.step == #p.steps then
                 self:dispatch("animation.finish")
                 self:dispatchSync("animation.finish")
@@ -241,33 +66,36 @@ function Animation:update(dt)
 
             p.time = 0
             
-            --On the final "frame" of an animation, we need to see how much more distance
-            --we need to move to fully reach v.value. If not, we will always be a smidge
-            --off, since we stop before that final movement. However, we also can't stop
-            --one frame after, since we will overshoot by a smidge. We don't typecheck
-            --here because we'd need to clone v.value anyways, if it's a vector.
-            p.transform[v.type](p.transform, v.value - v.current)
+            if v.type == "custom" then
+                v.callback(p.transform, 1, dt, p.speed, step.seconds)
+            else
+                --On the final "frame" of an animation, we need to see how much more distance
+                --we need to move to fully reach v.value. If not, we will always be a smidge
+                --off, since we stop before that final movement. However, we also can't stop
+                --one frame after, since we will overshoot by a smidge. We don't typecheck
+                --here because we'd need to clone v.value anyways, if it's a vector.
+                p.transform[v.type](p.transform, v.value - v.current)
+            end
             
             break
         end
-        
-        --TODO: If an animation is reset in the middle of running, how can we automatically
-        --have it restart from zero? Do we need to track the changes made during the animation
-        --and do them backwards? Or do we keep track of the state of the original transform
-        --actually it's probably that one. Clone it on creation, when reset, just set the
-        --transform back to that.
-        adjust = v.value * easings[v.easing](dt * p.speed / p.steps[p.step].seconds)
-        
-        --While vectors do have overloads, and we can just use v.current + adjust to
-        --include numbers and vectors alike, by checking first we can avoid having to
-        --create a new vector every update frame.
-        if type(v.current) == "vector" then
-            v.current:add(adjust)
+
+        if v.type == "custom" then
+            v.callback(p.transform, v.easing(dt * p.speed / step.seconds), dt, p.speed, step.seconds)
         else
-            v.current = v.current + adjust
+            adjust = v.value * v.easing(dt * p.speed / step.seconds)
+
+            --While vectors do have overloads, and we *can* just use v.current + adjust to
+            --include numbers and vectors alike, by checking first we can avoid having to
+            --create a new vector every update frame.
+            if type(v.current) == "vector" then
+                v.current:add(v.inital + adjust)
+            else
+                v.current = v.current + v.inital + adjust
+            end
+
+            p.transform[v.type](p.transform, adjust)
         end
-        
-        p.transform[v.type](p.transform, adjust)
     end
 end
 
@@ -278,11 +106,18 @@ end
 function Animation:translate(distance, easing)
     local p = private[self]
 
+    easing = easing or Easings:linear()
+
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    TypeError:assert(type(distance) == "vector", "distance", type(distance), "vector")
+    VectorSizeError:assert(distance.size == 2, distance.size, 2)
+
     table.insert(p.steps[p.step], {
-        type = "translate",
-        value = distance,
+        type    = "translate",
+        value   = distance,
+        easing  = easing,
+        inital  = distance:clone():setToValue(0),
         current = distance:clone():setToValue(0),
-        easing = easing or "linear"
     })
 
     return self
@@ -291,11 +126,17 @@ end
 function Animation:rotate(angle, easing)
     local p = private[self]
 
+    easing = easing or Easings:linear()
+    
+    TypeError:assert(type(angle) == "number", "angle", type(angle), "number")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+
     table.insert(p.steps[p.step], {
-        type = "rotate",
-        value = angle,
-        current = 0,
-        easing = easing or "linear"
+        type    = "rotate",
+        value   = angle,
+        easing  = easing,
+        inital  = 0,
+        current = 0
     })
 
     return self
@@ -304,11 +145,18 @@ end
 function Animation:scale(size, easing)
     local p = private[self]
 
+    easing = easing or Easings:linear()
+
+    TypeError:assert(type(size) == "vector", "size", type(size), "vector")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    VectorSizeError:assert(size.size == 2, size.size, 2)
+
     table.insert(p.steps[p.step], {
-        type = "scale",
-        value = size,
-        current = size:clone():setToValue(0),
-        easing = easing or "linear"
+        type    = "scale",
+        value   = size,
+        easing  = easing,
+        inital  = size:clone():setToValue(1),
+        current = size:clone():setToValue(1)
     })
 
     return self
@@ -317,17 +165,38 @@ end
 function Animation:shear(skew, easing)
     local p = private[self]
 
+    easing = easing or Easings:linear()
+
+    TypeError:assert(type(skew) == "vector", "skew", type(skew), "vector")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    VectorSizeError:assert(skew.size == 2, skew.size, 2)
+
     table.insert(p.steps[p.step], {
-        type = "shear",
-        value = skew,
-        current = size:clone():setToValue(0),
-        easing = easing or "linear"
+        type    = "shear",
+        value   = skew,
+        easing  = easing,
+        inital  = size:clone():setToValue(0),
+        current = size:clone():setToValue(0)
     })
 
     return self
 end
 
 function Animation:custom(callback, easing)
+    local p = private[self]
+
+    easing = easing or Easings:linear()
+
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+
+    table.insert(p.steps[p.step], {
+        type     = "custom",
+        easing   = easing,
+        callback = callback
+    })
+
+    return self
 end
 
 --This method is run to say that all of the previous steps should be
@@ -336,7 +205,14 @@ end
 function Animation:next(seconds)
     local p = private[self] 
 
+    TypeError:assert(type(seconds) == "number", "seconds", type(seconds), "number")
+    PositiveError:assert(seconds >= 0, seconds)
+
+    --Add `seconds` value so we have a reference of how long each step of the animation
+    --should take.
     p.steps[p.step].seconds = seconds
+
+    --Then, increase step index, and create a new table to add more operations to.
     p.step = p.step + 1
 
     p.steps[p.step] = {}
@@ -349,8 +225,6 @@ end
 function Animation:finish(seconds)
     local p = private[self] 
 
-    --Run through all the steps, cache the endpoints, so that stop will jump to
-    --the appropriate locations, and so we can reverse.
     p.steps[p.step].seconds = seconds
 
     p.step = 1
@@ -359,6 +233,10 @@ end
 --Reset the state of the animation, such that the transform is set
 --back to it's original position, and that the step is set back to 1.
 function Animation:reset()
+    local p = private[self]
+
+    p.step = 1
+    p.transform = 2
 end
 
 --Starts an animation, playing from whatever step it is currently on.
@@ -377,6 +255,11 @@ end
 
 --Reverse the animation track, such that when you begin playing it, it
 --starts at the last defined step, and ends at the first.
+--TODO: Can we reverse by just doing `-value` from the endpoint of the
+--animation? All the basic transformation stuff would work, but how
+--would callback work? Do we need an "invert" callback? Should callbacks
+--be defined such that going from 0 to -1 is the inverse of going from
+--0 to 1? :shrug:
 function Animation:reverse()
 end
 
@@ -390,7 +273,9 @@ function Animation:reset()
 
     p.step = 1
     p.time = 0
-
+    
+    p.transform.matrix = p.copy.matrix
+    
     return self
 end
 
