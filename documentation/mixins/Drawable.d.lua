@@ -12,6 +12,7 @@ Drawable = {}
 function Drawable:new() end
 
 ---Method meant to be called interally, which applies the [color](lua://Color.Class) and
----[transform](lua://Transform.Class).
+---[transform](lua://Transform.Class). Since `apply` is a common method name, you will likely want to call this
+---method with `Drawable.apply(self)`.
 ---@protected
-function Drawable:drawable() end
+function Drawable:apply() end
