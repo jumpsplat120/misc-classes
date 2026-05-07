@@ -452,7 +452,7 @@ function Color:blend(color, mode, percentage)
     mode = mode:lower()
 
     InvalidError:assert(blend_modes_lut[mode], mode, "mode", blend_modes)
-
+    
     for i, v in ipairs(blend.calculate(mode, self, color, percentage or 0.5)) do
         p.values[i] = v
     end
