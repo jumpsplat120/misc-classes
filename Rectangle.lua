@@ -122,7 +122,8 @@ function Rectangle:contains(vector)
            vy <  p.offset.y + p.size.y
 end
 
-    --TODO
+--TODO: Convert second rectangle to localspace of first rectangle, using inverseTransformValues
+--then do AABB
 function Rectangle:touching(rectangle)
     local x, y, w, h, p, origin
 
@@ -140,7 +141,7 @@ function Rectangle:draw()
 
     love.graphics.push()
 
-    self:drawable()
+    Drawable.apply(self)
     
     love.graphics.rectangle(p.mode, p.offset.x, p.offset.y, p.size.x, p.size.y)
 
