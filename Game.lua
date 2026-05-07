@@ -756,7 +756,7 @@ function Game.__get:loaded()
     return private[self].loaded
 end
 
-function Game.__get:running_for()
+function Game.__get:time()
     return private[self].started:secondsUntil(Date:now())
 end
 
