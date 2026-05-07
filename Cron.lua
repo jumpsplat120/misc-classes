@@ -59,7 +59,7 @@ function Cron:new(opts)
     ConstructorError:assert(opts.internal == internal, "Cron")
 
     Emitter.new(self)
-    
+
     p.time  = 0
     p.args  = opts.args
     p.once  = opts.once
@@ -119,6 +119,7 @@ end
 
 Cron.__type = "cron"
 
+---@type Cron.Class
 local Class = Object:create(Cron, Emitter)
 
 return Class
