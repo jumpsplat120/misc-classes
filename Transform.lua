@@ -1,12 +1,13 @@
 local Object, private
 local Transform
-local TypeError, VectorSizeError
+local TypeError, VectorSizeError, TableLengthError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-TypeError       = require("classes.errors.TypeError")
-VectorSizeError = require("classes.errors.VectorSizeError")
+TypeError        = require("classes.errors.TypeError")
+VectorSizeError  = require("classes.errors.VectorSizeError")
+TableLengthError = require("classes.errors.TableLengthError")
 
 Transform = Object:init()
 
@@ -186,12 +187,13 @@ end
 
 function Transform.__set:matrix(value)
     TypeError:assert(type(value) == "table", "matrix", type(value), "table")
-
+    TableLengthError:assert(#value == 16, 16, #value)
+    
     for i, v in ipairs(value) do
         TypeError:assert(type(value), "matrix[" .. i .. "]", type(v), "number")
     end
     
-    private[self].transform:setMatrix(table.unpack(value))
+    private[self].transform:setMatrix(value)
 end
 
     --======METAMETHODS======--
