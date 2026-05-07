@@ -215,7 +215,7 @@ function Animation:new(transform)
 end
 
     --======METHODS======--
-local vec = require("classes.Vector"):fromValues(0,0)
+
 function Animation:update(dt)
     local p, adjust
     
@@ -230,12 +230,12 @@ function Animation:update(dt)
             if p.step == #p.steps then
                 self:dispatch("animation.finish")
                 self:dispatchSync("animation.finish")
-
+               
                 p.playing = false
             else
                 self:dispatch("animation.step", p.step)
                 self:dispatchSync("animation.step", p.step)
-
+                
                 p.step = p.step + 1
             end
 
@@ -244,16 +244,29 @@ function Animation:update(dt)
             --On the final "frame" of an animation, we need to see how much more distance
             --we need to move to fully reach v.value. If not, we will always be a smidge
             --off, since we stop before that final movement. However, we also can't stop
-            --one frame after, since we will overshoot by a smidge.
+            --one frame after, since we will overshoot by a smidge. We don't typecheck
+            --here because we'd need to clone v.value anyways, if it's a vector.
             p.transform[v.type](p.transform, v.value - v.current)
             
             break
         end
-    
+        
+        --TODO: If an animation is reset in the middle of running, how can we automatically
+        --have it restart from zero? Do we need to track the changes made during the animation
+        --and do them backwards? Or do we keep track of the state of the original transform
+        --actually it's probably that one. Clone it on creation, when reset, just set the
+        --transform back to that.
         adjust = v.value * easings[v.easing](dt * p.speed / p.steps[p.step].seconds)
         
-        v.current = v.current + adjust
-
+        --While vectors do have overloads, and we can just use v.current + adjust to
+        --include numbers and vectors alike, by checking first we can avoid having to
+        --create a new vector every update frame.
+        if type(v.current) == "vector" then
+            v.current:add(adjust)
+        else
+            v.current = v.current + adjust
+        end
+        
         p.transform[v.type](p.transform, adjust)
     end
 end
@@ -289,14 +302,32 @@ function Animation:rotate(angle, easing)
 end
 
 function Animation:scale(size, easing)
+    local p = private[self]
+
+    table.insert(p.steps[p.step], {
+        type = "scale",
+        value = size,
+        current = size:clone():setToValue(0),
+        easing = easing or "linear"
+    })
+
+    return self
 end
 
 function Animation:shear(skew, easing)
+    local p = private[self]
+
+    table.insert(p.steps[p.step], {
+        type = "shear",
+        value = skew,
+        current = size:clone():setToValue(0),
+        easing = easing or "linear"
+    })
+
+    return self
 end
 
---A custom callback that runs once every update frame. When it returns `true`,
---then it is considered "finished".
-function Animation:custom(callback)
+function Animation:custom(callback, easing)
 end
 
 --This method is run to say that all of the previous steps should be
