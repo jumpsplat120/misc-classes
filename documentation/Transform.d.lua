@@ -1,6 +1,12 @@
 ---@meta Transform
 
----@class Transform.Class : Classy.Object
+---Tranform class.
+---@class Transform.Class
+---@overload fun(x: number, y: number, angle: number, sx: number, sy: number, ox: number, oy: number, kx: number, ky: number): Transform
+TransformClass = {}
+
+---Red pill, blue pill. Get it? Cause a transform is a matrix?
+---@class Transform : Classy.Object
 ---@field affine2DTransform boolean
 ---@field matrix number[]
 Transform = {}
@@ -15,7 +21,7 @@ Transform = {}
 ---@param oy any
 ---@param kx any
 ---@param ky any
-function Transform:new(x, y, angle, sx, sy, ox, oy, kx, ky) end
+function TransformClass:new(x, y, angle, sx, sy, ox, oy, kx, ky) end
 
 ---comment
 function Transform:apply() end

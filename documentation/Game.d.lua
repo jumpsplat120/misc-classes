@@ -1,9 +1,23 @@
 ---@meta Game
 
----@class Game.Class : Classy.Object, Emitter.Mixin
+--The main game class. Game game game.
+---@class Game.Class
+---@overload fun(id: any): Game
+GameClass = {}
+
+---Game game game.
+---@class Game : Classy.Object, Emitter.Mixin
+---@field size number
+---@field keys number
+---@field time number
+---@field width number
+---@field debug number
+---@field mouse number
+---@field height number
+---@field loaded number
 Game = {}
 
-function Game:new() end
+function GameClass:new() end
 
 function Game:load() end
 
@@ -70,12 +84,3 @@ function Game:touchmoved(id, x, y, dx, dy, pressure) end
 function Game:touchpressed(id, x, y, dx, dy, pressure) end
 
 function Game:touchreleased(id, x, y, dx, dy, pressure) end
-
-function Game.__get:debug()
-function Game.__get:loaded()
-function Game.__get:running_for()
-function Game.__get:keys()
-function Game.__get:width()
-function Game.__get:height()
-function Game.__get:size()
-function Game.__get:mouse()

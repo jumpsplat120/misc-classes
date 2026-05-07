@@ -1,18 +1,24 @@
 ---@meta Image
 
----@class Image.Class : Classy.Object, Drawable.Mixin
----@field size Vector.Class
----@field offset Vector.Class
+---Image class.
+---@class Image.Class
+---@overload fun() Do not call directly.
+ImageClass = {}
+
+---Stuff what you done see.
+---@class Image : Classy.Object, Drawable.Mixin
+---@field size Vector
+---@field offset Vector
 Image = {}
 
 ---@param image any
 ---@param x any
 ---@param y any
-function Image:fromValues(image, x, y) end
+function ImageClass:fromValues(image, x, y) end
 
-function Image:fromVector(image, position) end
+function ImageClass:fromVector(image, position) end
 
-function Image:new(opts) end
+function ImageClass:new(opts) end
 
 function Image:draw() end
 

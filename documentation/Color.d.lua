@@ -1,6 +1,10 @@
 ---@meta Color
 
----@class Color.Class : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
+---@class Color.Class
+---@overload fun() Do not call directly.
+ColorClass = {}
+
+---@class Color : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
 ---@field hex string
 ---@field rgb {red:number,green:number,blue:number,alpha:number}
 ---@field hsv {hue:number,saturation:number,value:number,alpha:number}
@@ -21,6 +25,7 @@
 ---@field brightness number
 ---@field hsv_saturation number
 ---@field hsl_saturation number
+---@overload fun() Do not call directly.
 Color = {}
 
 ---comment
@@ -28,43 +33,43 @@ Color = {}
 ---@param saturation any
 ---@param value any
 ---@param alpha any
-function Color:fromHSV(hue, saturation, value, alpha) end
+function ColorClass:fromHSV(hue, saturation, value, alpha) end
 
 ---comment
 ---@param hue any
 ---@param saturation any
 ---@param brightness any
 ---@param alpha any
-function Color:fromHSB(hue, saturation, brightness, alpha) end
+function ColorClass:fromHSB(hue, saturation, brightness, alpha) end
 
 ---comment
 ---@param hue any
 ---@param saturation any
 ---@param lightness any
 ---@param alpha any
-function Color:fromHSL(hue, saturation, lightness, alpha) end
+function ColorClass:fromHSL(hue, saturation, lightness, alpha) end
 
 ---comment
 ---@param red any
 ---@param green any
 ---@param blue any
 ---@param alpha any
-function Color:fromRGB(red, green, blue, alpha) end
+function ColorClass:fromRGB(red, green, blue, alpha) end
 
 ---comment
 ---@param red any
 ---@param green any
 ---@param blue any
 ---@param alpha any
-function Color:fromRGB255(red, green, blue, alpha) end
+function ColorClass:fromRGB255(red, green, blue, alpha) end
 
 ---comment
 ---@param hex any
-function Color:fromHex(hex) end
+function ColorClass:fromHex(hex) end
 
 ---comment
 ---@param opts any
-function Color:new(opts) end
+function ColorClass:new(opts) end
 
 ---comment
 function Color:apply() end

@@ -8,7 +8,11 @@
 ---Vector math features heavily in game programming, and this class features all of the various functions
 ---that you'll likely need (and some you probably won't) during the process of moving something from
 ---point A to point B.
----@class Vector.Class : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
+---@class Vector.Class
+---@overload fun() Do not call directly.
+VectorClass = {}
+
+---@class Vector : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
 ---@field x number 
 ---@field y number 
 ---@field z number 
@@ -19,29 +23,29 @@
 ---@field size number 
 ---@field length number 
 ---@field magnitude number 
----@operator add(Vector.Class|number): Vector.Class
----@operator sub(Vector.Class|number): Vector.Class
----@operator mul(Vector.Class|number): Vector.Class
----@operator div(Vector.Class|number): Vector.Class
----@operator mod(Vector.Class|number): Vector.Class
----@operator pow(Vector.Class|number): Vector.Class
----@operator unm: Vector.Class
+---@operator add(Vector|number): Vector
+---@operator sub(Vector|number): Vector
+---@operator mul(Vector|number): Vector
+---@operator div(Vector|number): Vector
+---@operator mod(Vector|number): Vector
+---@operator pow(Vector|number): Vector
+---@operator unm: Vector
 ---@operator len: number
 Vector = {}
 
 ---comment
 ---@param tbl any
----@return Vector.Class
-function Vector:fromTable(tbl) end
+---@return Vector
+function VectorClass:fromTable(tbl) end
 
 ---comment
 ---@param ... unknown
----@return Vector.Class
-function Vector:fromValues(...) end
+---@return Vector
+function VectorClass:fromValues(...) end
 
 ---comment
 ---@param opts any
-function Vector:new(opts) end
+function VectorClass:new(opts) end
 
 ---comment
 ---@param vector any
