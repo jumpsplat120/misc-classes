@@ -75,26 +75,30 @@ function Animation:update(dt)
                 --one frame after, since we will overshoot by a smidge. We don't typecheck
                 --here because we'd need to clone v.value anyways, if it's a vector.
                 p.transform[v.type](p.transform, v.value - v.current)
+
+                if type(v.current) == "vector" then
+                    v.current = v.inital:clone()
+                else
+                    v.current = v.inital
+                end
             end
             
             break
         end
 
         if v.type == "custom" then
-            v.callback(p.transform, v.easing(dt * p.speed / step.seconds), dt, p.speed, step.seconds)
+            v.callback(p.transform, v.easing(p.time / step.seconds), dt, p.speed, step.seconds)
         else
-            adjust = v.value * v.easing(dt * p.speed / step.seconds)
-
+            p.transform[v.type](p.transform, v.value * v.easing(p.time / step.seconds) - v.current)
+            
             --While vectors do have overloads, and we *can* just use v.current + adjust to
             --include numbers and vectors alike, by checking first we can avoid having to
             --create a new vector every update frame.
             if type(v.current) == "vector" then
-                v.current:add(v.inital + adjust)
+                v.current:setToVector(v.value * v.easing(p.time / step.seconds))
             else
-                v.current = v.current + v.inital + adjust
+                v.current = v.value * v.easing(p.time / step.seconds)
             end
-
-            p.transform[v.type](p.transform, adjust)
         end
     end
 end
@@ -230,13 +234,10 @@ function Animation:finish(seconds)
     p.step = 1
 end
 
---Reset the state of the animation, such that the transform is set
---back to it's original position, and that the step is set back to 1.
-function Animation:reset()
-    local p = private[self]
+function Animation:restart()
+    private[self].step = 1
 
-    p.step = 1
-    p.transform = 2
+    return self
 end
 
 --Starts an animation, playing from whatever step it is currently on.
@@ -268,13 +269,13 @@ function Animation:clone()
 end
 
 --Resets the animation progress.
-function Animation:reset()
+function Animation:reset(transform)
     local p = private[self]
 
     p.step = 1
     p.time = 0
-    
-    p.transform.matrix = p.copy.matrix
+
+    p.transform.matrix = transform.matrix or p.copy.matrix
     
     return self
 end
