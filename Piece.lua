@@ -56,7 +56,7 @@ function setsprite(p, add)
 end
 
 function shaderdraw(p, camera)
-    love.graphics.draw(p.spritebatch.uncolored, camera:translateValues(0, 0))
+    love.graphics.draw(p.spritebatch.uncolored, camera:translateByValues(0, 0))
 end
 
 function draw(p, camera)
@@ -77,7 +77,7 @@ function draw(p, camera)
         love.graphics.setShader(shader)
     end
 
-    love.graphics.draw(p.spritebatch.colored, camera:translateValues(0, 0))
+    love.graphics.draw(p.spritebatch.colored, camera:translateByValues(0, 0))
 end
 
 invis = Color:fromRGB(0, 0, 0, 0)

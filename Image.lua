@@ -165,7 +165,7 @@ function Image:isVisible(...)
     --drawing images that don't exist, this works perfectly fine.
     for _, vector in ipairs(corners) do
         for _, transform in ipairs(args) do
-            transform:translateVector(vector)
+            transform:translateByVector(vector)
         end
 
         self.transform:transformVector(vector)

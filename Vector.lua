@@ -363,7 +363,7 @@ end
 --Shift this vector by the corresponding values in another vector. This should
 --be done instead of `vec1 = vec1 + vec2`, since it avoids needing to create a
 --new vector.
-function Vector:translateVector(vector)
+function Vector:translateByVector(vector)
     local pa, pb
 
     pa = private[self]
@@ -407,7 +407,7 @@ function Vector:translateTable(tbl)
 end
 
 --Shift this vector by the corresponding values provided.
-function Vector:translateValues(...)
+function Vector:translateByValues(...)
     local p, args
     
     p    = private[self]
