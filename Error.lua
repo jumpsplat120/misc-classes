@@ -58,7 +58,7 @@ end
 --Overwrite the love.errorhandler to specfically use our Error class.
 function love.errorhandler(msg)
     local trace, lines, onscreen_text, full_err_text
-    
+
     lines = {}
     
     --If a table is returned, that's an error from within a coroutine, likely
@@ -225,4 +225,7 @@ end
 
 Error.__type = "error"
 
-return Object:create(Error)
+---@class Error.Class
+local Class = Object:create(Error)
+
+return Class
