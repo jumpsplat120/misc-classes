@@ -20,6 +20,52 @@ Animation = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
+local shear, scale, rotate, translate
+local lerp
+
+lerp = Easings:linear()
+
+--Explination for math
+--Assume that `finish` is a value of 15, and we are 30% of the way through a
+--transformation. That means we want to be 4.5 units away from the data.intital
+--(usually zero, but not always, such as in the case of scale). However, the
+--transform is relevative to it's current positional, so we need to subtract
+--that 4.5 from however far we've already transformed. Assuming we transformed 4
+--units already, then weekday actually only want to move 0.5 more. Thus, our
+--final result.
+
+function shear(self, data, progress)
+    local expected = (data.finish - data.start):multiply(progress):add(data.start)
+
+    private[self].transform:shear(expected - data.value)
+
+    data.value:setToVector(progress == 1 and data.start or expected)
+end
+
+function scale(self, data, progress)
+    local expected = (data.finish - data.start):multiply(progress):add(data.start)
+
+    private[self].transform:scale(expected - data.value)
+
+    data.value:setToVector(progress == 1 and data.start or expected)
+end
+
+function rotate(self, data, progress)
+    local expected = data.start + (data.finish - data.start) * progress
+
+    private[self].transform:rotate(expected - data.value)
+
+    data.value = progress == 1 and data.start or expected
+end
+
+function translate(self, data, progress)
+    local expected = (data.finish - data.start):multiply(progress):add(data.start)
+
+    private[self].transform:translate(expected - data.value)
+
+    data.value:setToVector(progress == 1 and data.start or expected)
+end
+
     --======CONSTRUCTOR======--
 
 --Assumes that the transform is identity. So a `rotate(math.pi)` is a half turn, not a
@@ -29,6 +75,7 @@ function Animation:new(transform)
 
     Emitter.new(self)
 
+    p.emit      = true
     p.time      = 0
     p.copy      = transform:clone()
     p.transform = transform
@@ -40,67 +87,97 @@ end
     --======METHODS======--
 
 function Animation:update(dt)
-    local p, step, adjust
+    local p, step, final
     
     p = private[self]
 
     if not p.playing then return end
 
     step = p.steps[p.step]
-
-    p.time = p.time + dt * p.speed
     
-    for i, v in ipairs(step) do        
-        if p.time >= step.seconds then
-            if p.step == #p.steps then
+    p.time = math.min(p.time + dt * p.speed, step.seconds)
+    
+    for _, data in ipairs(step) do
+        data.callback(self, data, (data.easing or lerp)(p.time / step.seconds))
+    end
+
+    if p.time >= step.seconds then
+        p.time = 0
+
+        if p.step == #p.steps then
+            p.step    = 1
+            p.playing = false
+
+            p.copy.matrix = p.transform.matrix
+
+            if p.emit then
                 self:dispatch("animation.finish")
                 self:dispatchSync("animation.finish")
-               
-                p.playing = false
-            else
-                self:dispatch("animation.step", p.step)
-                self:dispatchSync("animation.step", p.step)
-                
-                p.step = p.step + 1
             end
-
-            p.time = 0
-            
-            if v.type == "custom" then
-                v.callback(p.transform, 1, dt, p.speed, step.seconds)
-            else
-                --On the final "frame" of an animation, we need to see how much more distance
-                --we need to move to fully reach v.value. If not, we will always be a smidge
-                --off, since we stop before that final movement. However, we also can't stop
-                --one frame after, since we will overshoot by a smidge. We don't typecheck
-                --here because we'd need to clone v.value anyways, if it's a vector.
-                p.transform[v.type](p.transform, v.value - v.current)
-
-                if type(v.current) == "vector" then
-                    v.current = v.inital:clone()
-                else
-                    v.current = v.inital
-                end
-            end
-            
-            break
-        end
-
-        if v.type == "custom" then
-            v.callback(p.transform, v.easing(p.time / step.seconds), dt, p.speed, step.seconds)
         else
-            p.transform[v.type](p.transform, v.value * v.easing(p.time / step.seconds) - v.current)
-            
-            --While vectors do have overloads, and we *can* just use v.current + adjust to
-            --include numbers and vectors alike, by checking first we can avoid having to
-            --create a new vector every update frame.
-            if type(v.current) == "vector" then
-                v.current:setToVector(v.value * v.easing(p.time / step.seconds))
-            else
-                v.current = v.value * v.easing(p.time / step.seconds)
+            p.step = p.step + 1
+
+            if p.emit then
+                self:dispatch("animation.step", p.step - 1)
+                self:dispatchSync("animation.step", p.step - 1)
             end
         end
     end
+
+    return self
+end
+
+function Animation:shear(skew, easing)
+    local p = private[self]
+
+    TypeError:assert(type(skew) == "vector", "skew", type(skew), "vector")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    VectorSizeError:assert(skew.size == 2, skew.size, 2)
+
+    table.insert(p.steps[p.step], {
+        start    = skew:clone():setToValue(0),
+        value    = skew:clone():setToValue(0),
+        easing   = easing,
+        finish   = skew,
+        callback = shear
+    })
+
+    return self
+end
+
+function Animation:scale(size, easing)
+    local p = private[self]
+
+    TypeError:assert(type(size) == "vector", "size", type(size), "vector")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    VectorSizeError:assert(size.size == 2, size.size, 2)
+
+    table.insert(p.steps[p.step], {
+        start    = size:clone():setToValue(1),
+        value    = size:clone():setToValue(1),
+        easing   = easing,
+        finish   = size,
+        callback = scale
+    })
+
+    return self
+end
+
+function Animation:rotate(angle, easing)
+    local p = private[self]
+    
+    TypeError:assert(type(angle) == "number", "angle", type(angle), "number")
+    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+
+    table.insert(p.steps[p.step], {
+        start    = 0,
+        value    = 0,
+        easing   = easing,
+        finish   = angle,
+        callback = rotate
+    })
+
+    return self
 end
 
 --Translate `distance`, optionally with some sort of
@@ -110,77 +187,16 @@ end
 function Animation:translate(distance, easing)
     local p = private[self]
 
-    easing = easing or Easings:linear()
-
     TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
     TypeError:assert(type(distance) == "vector", "distance", type(distance), "vector")
     VectorSizeError:assert(distance.size == 2, distance.size, 2)
 
     table.insert(p.steps[p.step], {
-        type    = "translate",
-        value   = distance,
-        easing  = easing,
-        inital  = distance:clone():setToValue(0),
-        current = distance:clone():setToValue(0),
-    })
-
-    return self
-end
-
-function Animation:rotate(angle, easing)
-    local p = private[self]
-
-    easing = easing or Easings:linear()
-    
-    TypeError:assert(type(angle) == "number", "angle", type(angle), "number")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
-
-    table.insert(p.steps[p.step], {
-        type    = "rotate",
-        value   = angle,
-        easing  = easing,
-        inital  = 0,
-        current = 0
-    })
-
-    return self
-end
-
-function Animation:scale(size, easing)
-    local p = private[self]
-
-    easing = easing or Easings:linear()
-
-    TypeError:assert(type(size) == "vector", "size", type(size), "vector")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
-    VectorSizeError:assert(size.size == 2, size.size, 2)
-
-    table.insert(p.steps[p.step], {
-        type    = "scale",
-        value   = size,
-        easing  = easing,
-        inital  = size:clone():setToValue(1),
-        current = size:clone():setToValue(1)
-    })
-
-    return self
-end
-
-function Animation:shear(skew, easing)
-    local p = private[self]
-
-    easing = easing or Easings:linear()
-
-    TypeError:assert(type(skew) == "vector", "skew", type(skew), "vector")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
-    VectorSizeError:assert(skew.size == 2, skew.size, 2)
-
-    table.insert(p.steps[p.step], {
-        type    = "shear",
-        value   = skew,
-        easing  = easing,
-        inital  = size:clone():setToValue(0),
-        current = size:clone():setToValue(0)
+        start    = distance:clone():setToValue(0),
+        value    = distance:clone():setToValue(0),
+        easing   = easing,
+        finish   = distance,
+        callback = translate
     })
 
     return self
@@ -189,14 +205,10 @@ end
 function Animation:custom(callback, easing)
     local p = private[self]
 
-    easing = easing or Easings:linear()
-
     TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
     TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
-
+    
     table.insert(p.steps[p.step], {
-        type     = "custom",
-        easing   = easing,
         callback = callback
     })
 
@@ -212,11 +224,8 @@ function Animation:next(seconds)
     TypeError:assert(type(seconds) == "number", "seconds", type(seconds), "number")
     PositiveError:assert(seconds >= 0, seconds)
 
-    --Add `seconds` value so we have a reference of how long each step of the animation
-    --should take.
     p.steps[p.step].seconds = seconds
 
-    --Then, increase step index, and create a new table to add more operations to.
     p.step = p.step + 1
 
     p.steps[p.step] = {}
@@ -232,10 +241,15 @@ function Animation:finish(seconds)
     p.steps[p.step].seconds = seconds
 
     p.step = 1
+
+    return self
 end
 
 function Animation:restart()
-    private[self].step = 1
+    local p = private[self]
+
+    p.time = 0
+    p.step = 1
 
     return self
 end
@@ -250,8 +264,10 @@ end
 function Animation:play(speed)
     local p = private[self]
 
-    p.speed = speed
+    p.speed   = speed
     p.playing = true
+
+    return self
 end
 
 --Reverse the animation track, such that when you begin playing it, it
@@ -268,33 +284,67 @@ end
 function Animation:clone()
 end
 
---Resets the animation progress.
-function Animation:reset(transform)
-    local p = private[self]
-
-    p.step = 1
-    p.time = 0
-
-    p.transform.matrix = transform.matrix or p.copy.matrix
-    
-    return self
-end
-
 --Stops the animation exactly where it is, to be resumed with play at a
 --later point.
 function Animation:pause()
+    private[self].playing = false
+
+    return self
 end
 
 --Stops the animation, stepping the animation forward to the start of the
 --next step, or backwards towards the start of the previous step, whichever
---is closer.
-function Animation:stop()
+--is closer. You can force a direction with `direction`.
+function Animation:stop(direction)
+    local p, step, progress
+
+    p = private[self]
+
+    if not p.playing then return self end
+
+    step = p.steps[p.step]
+
+    p.emit = false
+    p.time = direction == "backwards" and 0 or
+             direction == "forwards" and 1 or
+             p.time <= step.seconds * 0.5 and 0 or 1
+
+    self:update(0)
+
+    p.emit    = true
+    p.playing = false
+
+    self:dispatch("animation.stop", p.step)
+    self:dispatchSync("animation.stop", p.step)
+    
+    return self
 end
 
     --======GETTERS======--
-    
+
+function Animation.__get:step()
+    return private[self].step
+end
+
     --======SETTERS======--
-    
+
+function Animation.__set:step(value)
+    local p = private[self]
+
+    p.emit = false
+
+    while private[self].step ~= value do
+        p.time = 1
+
+        self:update(0)
+    end
+
+    p.emit = true
+
+    private[self].step = value
+    private[self].time = 0
+end
+
     --======METAMETHODS======--
 
 function Animation:__tostring()
