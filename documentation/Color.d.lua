@@ -2,7 +2,7 @@
 
 ---@class Color.Class
 ---@overload fun() Do not call directly.
-ColorClass = {}
+local ColorClass = {}
 
 ---@class Color : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
 ---@field hex string
@@ -25,8 +25,7 @@ ColorClass = {}
 ---@field brightness number
 ---@field hsv_saturation number
 ---@field hsl_saturation number
----@overload fun() Do not call directly.
-Color = {}
+local Color = {}
 
 ---comment
 ---@param hue any

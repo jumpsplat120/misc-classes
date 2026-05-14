@@ -1,7 +1,7 @@
 ---@meta Easings
 
 ---@class Easings.Class
-EasingsClass = {}
+local EasingsClass = {}
 
 ---@class Easings : Classy.Object
-Easings = {}
+local Easings = {}

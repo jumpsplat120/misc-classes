@@ -2,14 +2,14 @@
 
 ---Image class.
 ---@class Image.Class
----@overload fun() Do not call directly.
-ImageClass = {}
+---@overload fun(): Image
+local ImageClass = {}
 
 ---Stuff what you done see.
 ---@class Image : Classy.Object, Drawable.Mixin
 ---@field size Vector
 ---@field offset Vector
-Image = {}
+local Image = {}
 
 ---@param image any
 ---@param x any

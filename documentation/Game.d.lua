@@ -3,7 +3,7 @@
 --The main game class. Game game game.
 ---@class Game.Class
 ---@overload fun(id: any): Game
-GameClass = {}
+local GameClass = {}
 
 ---Game game game.
 ---@class Game : Classy.Object, Emitter.Mixin
@@ -15,7 +15,7 @@ GameClass = {}
 ---@field mouse number
 ---@field height number
 ---@field loaded number
-Game = {}
+local Game = {}
 
 function GameClass:new() end
 

@@ -3,13 +3,13 @@
 ---Tranform class.
 ---@class Transform.Class
 ---@overload fun(x: number, y: number, angle: number, sx: number, sy: number, ox: number, oy: number, kx: number, ky: number): Transform
-TransformClass = {}
+local TransformClass = {}
 
 ---Red pill, blue pill. Get it? Cause a transform is a matrix?
 ---@class Transform : Classy.Object
 ---@field affine2DTransform boolean
 ---@field matrix number[]
-Transform = {}
+local Transform = {}
 
 ---comment
 ---@param x any

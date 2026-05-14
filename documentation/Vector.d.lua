@@ -9,8 +9,8 @@
 ---that you'll likely need (and some you probably won't) during the process of moving something from
 ---point A to point B.
 ---@class Vector.Class
----@overload fun() Do not call directly.
-VectorClass = {}
+---@overload fun(): Vector
+local VectorClass = {}
 
 ---@class Vector : Classy.Object, Unpack.Mixin, Ipairs.Mixin, AsTable.Mixin
 ---@field x number 
@@ -31,7 +31,7 @@ VectorClass = {}
 ---@operator pow(Vector|number): Vector
 ---@operator unm: Vector
 ---@operator len: number
-Vector = {}
+local Vector = {}
 
 ---comment
 ---@param tbl any
