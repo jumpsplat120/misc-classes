@@ -1,26 +1,20 @@
----@type Object
-local Object
-local ANSIColor, private, is, TL
-local TypeError
+local Object, private
+local ANSIColor
+local vararg
+local MalformedStringError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-TL = require("lib.string_template")
-is = require("lib.is")
+vararg = require("lib.varargs")
 
-TypeError = require("classes.errors.TypeError")
+MalformedStringError = require("classes.errors.MalformedStringError")
 
-ANSIColor = Object:extend()
+ANSIColor = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local singleton, esc, fg, bg, ctrl
-
-fg   = 38
-bg   = 48
-ctrl = "\28"
-esc  = "\27"
+local singleton
 
     --======CONSTRUCTOR======--
 
@@ -30,43 +24,7 @@ function ANSIColor:new()
     singleton = self
 end
 
-    --======METHODS======--      
-
-function ANSIColor:parseString(value)
-    local clear, output
-    
-    TypeError:assert(is(value, "string"), "value", type(value), "string")
-
-    clear  = value:gsub("{(b?)#(%x%x)(%x%x)(%x%x)}(.-){#/}", ctrl):split(ctrl)
-    output = {}
-    
-    output[#output + 1] = table.remove(clear, 1)
-    
-    for pos, r, g, b, text in value:gfind("{(b?)#(%x%x)(%x%x)(%x%x)}(.-){#/}") do
-        output[#output + 1] = TL(
-            "%{esc}[%{pos == 'b' and bg or fg};2;"   ..
-            "%{tonumber(r, 16)};%{tonumber(g, 16)};" .. 
-            "%{tonumber(b, 16)}m%{text}%{esc}[0m", {
-                text = text,
-                esc = esc,
-                pos = pos,
-                r = r,
-                g = g,
-                b = b,
-                fg = fg,
-                bg = bg
-            })
-        
-        output[#output + 1] = table.remove(clear, 1)
-    end
-
-    return table.join(output, "")
-end
-
-
-function ANSIColor:parseTable(...)
-    assert("Under construction.")
-end
+    --======METHODS======--
 
     --======GETTERS======--
     
@@ -74,14 +32,77 @@ end
     
     --======METAMETHODS======--
 
+function ANSIColor:__call(...)
+    local pos, colors, output, value, err
+
+    pos    = 1
+    err    = "have a less-than-or-equal amount of opening tags to closing tags"
+    output = {}
+    colors = { "\27[0m" }
+
+    --Take all values, and convert them to strings, the way that `print` does.
+    for _, v in vararg(...) do
+        table.insert(output, tostring(v))
+    end
+
+    value  = table.concat(output, "\t")
+    output = {}
+
+    --Scan through the string, matching opening and closing tags, moving the
+    --pos search up to whatever is relevant. This lets us do stacked colors,
+    --which gsub or gmatch would not allow us to do.
+    while true do
+        local open, close
+
+        open  = { value:find("{(b?)#(%x%x)(%x%x)(%x%x)}", pos) }
+        close = { value:find("{#/}", pos) }
+
+        --No more color codes found.
+        if not (open[1] or close[1]) then
+            table.insert(output, value:sub(pos))
+
+            break
+        end
+        
+        --There's a closing tag, but nothing to close.
+        MalformedStringError:assert(not (close[1] and #colors == 0), value, err)
+
+        --There's an opening tag, but no following closing tag.
+        MalformedStringError:assert(not (open[1] and not close[1]), value, err)
+        
+        if (open[1] or math.huge) < close[1] then
+            table.insert(colors, string.format("\27[%s;2;%s;%s;%sm",
+                open[3] == "b" and 48 or 38,
+                tonumber(open[4], 16),
+                tonumber(open[5], 16),
+                tonumber(open[6], 16)
+            ))
+
+            table.insert(output, value:sub(pos, open[1] - 1))
+            table.insert(output, colors[#colors])
+
+            pos = open[2] + 1
+        else
+            table.remove(colors)
+            table.insert(output, value:sub(pos, close[1] - 1))
+            table.insert(output, colors[#colors])
+
+            pos = close[2] + 1
+        end
+    end
+
+    print(table.join(output, ""))
+end
+
 function ANSIColor:__tostring()
     local p = private[self]
 
-    if self.is_instance then return self:tostringHelper("singleton") end
-
-    return self:tostringHelper("Class")
+    return self:tostring("singleton")
 end
 
 ANSIColor.__type = "ansi_color"
 
-return ANSIColor
+---@type ANSIColor.Class
+local Class = Object:create(ANSIColor)
+
+return Class
