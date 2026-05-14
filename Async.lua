@@ -8,14 +8,7 @@ Async = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local threads, lookup
-
---`threads` is all of the relevant coroutines, which we iterate over when updating.
-threads = {}
-
---`lookup` lets us check if the currently running coroutine is an Async one, without
---needing to iterate over all of threads every time.
-lookup  = {}
+local threads = {}
 
     --======CONSTRUCTOR======--
 
@@ -26,14 +19,12 @@ function Async:new(f, ...)
         if not success then error(err, 0) end
     end)
 
-    threads[#threads + 1] = {
-        co    = co,
+    private[self] = nil
+
+    threads[co] = {
         args  = { ... },
         timer = 0
     }
-
-    lookup[co]    = true
-    private[self] = nil
 
     return true
 end
@@ -44,9 +35,9 @@ function Async:wait(delay)
     local co = coroutine.running()
 
     if not co         then return end
-    if not lookup[co] then return end
+    if not threads[co] then return end
 
-    threads[lookup[co]].timer = delay
+    threads[co].timer = delay
 
     coroutine.yield(co)
 end
@@ -58,7 +49,7 @@ function Async:waitFor(func, ...)
     co = coroutine.running()
 
     if not co         then return end
-    if not lookup[co] then return end
+    if not threads[co] then return end
 
     while true do
         output = func(...)
@@ -77,7 +68,7 @@ function Async:waitForEvent(object, event, timeout, ...)
     co = coroutine.running()
 
     if not co         then return end
-    if not lookup[co] then return end
+    if not threads[co] then return end
     
     if timeout then
         threads[co].timer = timeout
@@ -97,25 +88,19 @@ function Async:waitForEvent(object, event, timeout, ...)
 end
 
 function Async:update(dt)
-    --Iterate over threads backwards, so we can remove dead ones. Update any time
-    --values if needed. Any function that is ready gets called. Order doesn't matter
-    --since these are *Async* functions, and therefore run asyncronously. That means
-    --each coroutine is theoretically indepenent from the next, even if that's not
-    --literally true.
-    for i = #threads, 1, -1 do
-        if coroutine.status(threads[i].co) == "dead" then
-            lookup[threads[i].co] = nil
-
-            table.remove(threads, i)
-        elseif threads[i].timer > 0 then
-            threads[i].timer = threads[i].timer - dt
+    for co, data in pairs(threads) do
+        if coroutine.status(co) == "dead" then
+            threads[co] = nil
+        elseif data.timer > 0 then
+            data.timer = data.timer - dt
         else
-            local success, output = coroutine.resume(threads[i].co, table.unpack(threads[i].args or {}))
+            local success, output = coroutine.resume(co, table.unpack(data.args or {}))
 
             --Rethrow the captured error, which will contain the actual stacktrace from
             --inside the coroutine. We throw a table so that love.errorhandler knows not
             --to just debug.traceback it again. This should only happen for raw asserts
-            --and errors inside the coroutine.
+            --and errors inside the coroutine. We use error to set the level, which you
+            --can't do with assert.
             if not success then
                 error({ output }, 0)
             end
@@ -130,9 +115,12 @@ end
     --======METAMETHODS======--
 
 function Async:__tostring()
-    return self:tostring(#threads)
+    return self:tostring(table.count(lookup))
 end
 
 Async.__type = "async"
 
-return Object:create(Async)
+---@type Async.Class
+local Class = Object:create(Async)
+
+return Class
