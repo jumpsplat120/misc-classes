@@ -1,157 +1,217 @@
-local Object
-local Circle, private, Vector, is, Symbol, Drawable, Emitter
-local TypeError, InvalidError
+local Object, private
+local Circle
+local Vector
+local Drawable, Emitter, MouseInteractions
+local TypeError, InvalidError, VectorSizeError, ConstructorError
 
-Symbol  = require("lib.Classy.Symbol")
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 Vector = require("classes.Vector")
 
-Drawable = require("classes.mixins.Drawable")
-Emitter  = require("classes.mixins.Emitter")
+Emitter           = require("classes.mixins.Emitter")
+Drawable          = require("classes.mixins.Drawable")
+MouseInteractions = require("classes.mixins.MouseInteractions")
 
-is = require("lib.is")
+TypeError        = require("classes.errors.TypeError")
+InvalidError     = require("classes.errors.InvalidError")
+VectorSizeError  = require("classes.errors.VectorSizeError")
+ConstructorError = require("classes.errors.ConstructorError")
 
-InvalidError = require("classes.errors.InvalidError")
-TypeError    = require("classes.errors.TypeError")
-
-Circle = Object:extend()
-
-Circle:implement(Drawable, Emitter)
+Circle = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local FILL, LINE
-local symbols
+local internal, valid_modes, valid_modes_lut
 
-FILL = Symbol("fill")
-LINE = Symbol("line")
-
-private[Circle] = {
-    [FILL] = true,
-    [LINE] = true
+valid_modes_lut = {
+    fill = true,
+    line = true
 }
 
-symbols = table.join(table.keys(private[Circle]), ", ")
+valid_modes = table.join(valid_modes_lut, ", ", " and ")
+
+internal = math.uuid()
 
     --======CONSTRUCTOR======--
 
-function Circle:new(a, b, c)
+function Circle:fromValues(mode, x, y, radius)
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
+    TypeError:assert(type(mode) == "string", "mode", type(mode), "string")
+    TypeError:assert(type(radius) == "number", "radius", type(radius), "number")
+
+    mode = mode:lower()
+
+    InvalidError:assert(valid_modes_lut[mode], mode, "mode", valid_modes)
+
+    internal = math.uuid()
+
+    return self {
+        mode     = mode,
+        radius   = radius,
+        position = Vector:fromValues(x, y),
+        internal = internal
+    }
+end
+
+function Circle:fromVector(mode, position, radius)
+    TypeError:assert(type(mode) == "string", "mode", type(mode), "string")
+    TypeError:assert(type(radius) == "number", "radius", type(radius), "number")
+    TypeError:assert(type(position) == "vector", "position", type(position), "vector")
+
+    mode = mode:lower()
+
+    InvalidError:assert(valid_modes_lut[mode], mode, "mode", valid_modes)
+
+    VectorSizeError:assert(position.size == 2, position.size, 2)
+
+    internal = math.uuid()
+
+    return self {
+        mode     = mode,
+        radius   = radius,
+        position = position:clone(),
+        internal = internal
+    }
+end
+
+function Circle:new(opts)
     local p = private[self]
-    
+
+    ConstructorError:assert(opts.internal == internal, "Circle")
+
+    Emitter.new(self)
     Drawable.new(self)
-    
-    if is(a, Vector) and is(b, "number") then
-        p.position = a:clone()
-        p.radius   = math.abs(b)
-    elseif is(a, "number") and is(b, "number") and is(c, "number")  then
-        p.position = Vector:fromValues(a, b)
-        p.radius   = math.abs(b)
-    else
-        local ta, tb, tc
+    MouseInteractions.new(self)
 
-        ta = type(a)
-        tb = type(b)
-        tc = type(c)
+    p.mode   = opts.mode
+    p.radius = opts.radius
+    p.offset = Vector:fromValues(0, 0)
 
-        if ta == "vector" then
-            TypeError:throw("b", tb, "number")
-        else
-            TypeError:assert(ta == "number", "a", ta, "number")
-            TypeError:assert(tb == "number", "b", tb, "number")
-            TypeError:throw("c", tc, "number")
-        end
-    end
-
-    p.mode = LINE
+    p.drawable.transform:translate(opts.position)
 end
 
     --======METHODS======--
 
-function Circle:matches(circle)
-    local p = private[self]
-
-    return p.pos:matches(circle.pos) and p.size:matches(circle.size)
-end
-
+--TODO
 function Circle:contains(vector)
-    local p = private[self]
+    local p, vx, vy
+    
+    p = private[self]
 
-    return (p.position.x - vector.x) ^ 2 + (p.position.y - vector.y) ^ 2 >= p.radius ^ 2
+    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
+    VectorSizeError:assert(vector.size == 2, vector.size, 2)
+
+    vx, vy = p.drawable.transform:inverseTransformValues(vector.x, vector.y)
+
+    return (p.offset.x - vx) ^ 2 + (p.offset.y - vy) ^ 2 >= p.radius ^ 2
 end
 
---function Circle:touching(circle)
---    local x, y, w, h, p
---
---    p = private[self]
---    x, y, w, h = circle:unpack()
---
---    return p.pos.x + p.size.x >= x and
---           p.pos.x <= x + w and
---           p.pos.y + p.size.y >= y and
---           p.pos.y <= y + h
---end
+--TODO: Convert second circle to localspace of first circle, using inverseTransformValues
+--then check if distance(a, b) < a.radius + b.radius
+function Circle:touching(circle)
+    local x, y, w, h, p
+
+    p = private[self]
+    x, y, w, h = circle:unpack()
+
+    return p.pos.x + p.size.x >= x and
+           p.pos.x <= x + w and
+           p.pos.y + p.size.y >= y and
+           p.pos.y <= y + h
+end
 
 function Circle:draw()
     local p = private[self]
 
+    love.graphics.push()
+
     Drawable.apply(self)
     
-    love.graphics.circle(p.mode.id, p.position.x, p.position.y, p.radius)
+    love.graphics.circle(p.mode, p.offset.x, p.offset.y, p.radius)
 
-    Drawable.remove(self)
+    love.graphics.pop()
+
+    return self
 end
 
 function Circle:clone()
-    local p = private[self]
+    local p, circle
     
-    return Circle(p.pos:clone(), p.radius)
+    p      = private[self]
+    circle = getmetatable(self):fromValues(p.mode, 0, 0, p.radius)
+
+    circle.offset:setToVector(p.offset)
+
+    circle.transform.matrix = self.transform.matrix
+    
+    return circle
 end
 
 function Circle:unpack()
     local p = private[self]
 
-    return p.position.x, p.position.y, p.radius
+    return p.offset.x, p.offset.y, p.radius
 end
 
     --======GETTERS======--
 
-function Circle.__get:x()
-    return private[self].position.x
+function Circle.__get:ox()
+    return private[self].offset.x
 end
 
-function Circle.__get:y()
-    return private[self].position.y
-end
-
-function Circle.__get:position()
-    return private[self].position
+function Circle.__get:oy()
+    return private[self].offset.y
 end
 
 function Circle.__get:mode()
     return private[self].mode
 end
 
-function Circle.__get:FILL()
-    if not self.instance then return FILL end
-
-    return rawget(self, "FILL")
+function Circle.__get:radius()
+    return private[self].radius
 end
 
-function Circle.__get:LINE()
-    if not self.instance then return LINE end
-
-    return rawget(self, "LINE")
+function Circle.__get:offset()
+    return private[self].position
 end
 
     --======SETTERS======--
 
+function Circle.__set:ox(value)
+    TypeError:assert(type(value) == "number", "ox", type(value), "number")
+
+    private[self].offset.x = value
+end
+
+function Circle.__set:oy(value)
+    TypeError:assert(type(value) == "number", "oy", type(value), "number")
+
+    private[self].offset.y = value
+end
+
 function Circle.__set:mode(value)
-    TypeError:assert(is(value, Symbol), "mode", type(value), Symbol)
-    InvalidError:assert(private[Circle][value], value, "mode", symbols)
+    TypeError:assert(type(value) == "string", "mode", type(value), "string")
+
+    value = value:lower()
+
+    InvalidError:assert(valid_modes_lut[value], value, "mode", valid_modes)
 
     private[self].mode = value
+end
+
+function Circle.__get:radius(value)
+    TypeError:assert(type(value) == "number", "radius", type(value), "number")
+
+    private[self].radius = value
+end
+
+function Circle.__get:offset(value)
+    TypeError:assert(type(value) == "vector", "offset", type(value), "vector")
+    VectorSizeError:assert(value.size == 2, value.size, 2)
+
+    private[self].offset:setToVector(value)
 end
 
     --======METAMETHODS======--
@@ -159,9 +219,11 @@ end
 function Circle:__tostring()
     local p = private[self]
 
-    return self:tostringHelper(p.position.x, p.position.y, p.radius)
+    return self:tostring(p.position.x, p.position.y, p.radius)
 end
 
 Circle.__type = "circle"
 
-return Circle
+local Class = Object:create(Circle, Drawable, Emitter, MouseInteractions)
+
+return Class
