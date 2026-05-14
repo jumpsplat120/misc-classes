@@ -22,14 +22,14 @@ Rectangle = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
-local modes, internal
+local internal, valid_modes, valid_modes_lut
 
-modes = {
+valid_modes_lut = {
     fill = true,
     line = true
 }
 
-internal = math.uuid()
+valid_modes = table.join(valid_modes_lut, ", ", " and ")
 
     --======STATIC======--
 
@@ -44,7 +44,7 @@ function Rectangle:fromValues(mode, x, y, width, height)
 
     mode = mode:lower()
 
-    InvalidError:assert(modes[mode], mode, "mode", table.join(modes, ", ", " and "))
+    InvalidError:assert(valid_modes_lut[mode], mode, "mode", valid_modes)
 
     internal = math.uuid()
     
@@ -63,7 +63,7 @@ function Rectangle:fromVectors(mode, position, size)
 
     mode = mode:lower()
 
-    InvalidError:assert(modes[mode], mode, "mode", table.join(modes, ", ", " and "))
+    InvalidError:assert(valid_modes_lut[mode], mode, "mode", valid_modes)
     
     VectorSizeError:assert(size.size == 2, size.size, 2)
     VectorSizeError:assert(position.size == 2, position.size, 2)
@@ -95,16 +95,6 @@ function Rectangle:new(opts)
 end
 
     --======METHODS======--
-
-    --TODO
-function Rectangle:matches(rectangle)
-    local p = private[self]
-
-    if p.drawable.transform:matches(private[rectangle].drawable.transform) then
-    end
-    p.size:matches(rectangle.size)
-    p.offset:matches(rectangle.offset)
-end
 
 function Rectangle:contains(vector)
     local p, vx, vy
@@ -179,20 +169,20 @@ function Rectangle.__get:oy()
     return private[self].offset.y
 end
 
-function Rectangle.__get:width()
-    return private[self].size.x
-end
-
-function Rectangle.__get:height()
-    return private[self].size.y
-end
-
 function Rectangle.__get:mode()
     return private[self].mode
 end
 
 function Rectangle.__get:size()
     return private[self].size
+end
+
+function Rectangle.__get:width()
+    return private[self].size.x
+end
+
+function Rectangle.__get:height()
+    return private[self].size.y
 end
 
 function Rectangle.__get:offset()
@@ -213,18 +203,6 @@ function Rectangle.__set:oy(value)
     private[self].offset.y = value
 end
 
-function Rectangle.__set:width(value)
-    TypeError:assert(type(value) == "number", "width", type(value), "number")
-
-    private[self].size.x = value
-end
-
-function Rectangle.__set:height(value)
-    TypeError:assert(type(value) == "number", "height", type(value), "number")
-
-    private[self].size.y = value
-end
-
 function Rectangle.__set:mode(value)
     TypeError:assert(type(value) == "string", "mode", type(value), "string")
 
@@ -240,6 +218,18 @@ function Rectangle.__set:size(value)
     VectorSizeError:assert(value.size == 2, value.size, 2)
 
     private[self].size:setToVector(value)
+end
+
+function Rectangle.__set:width(value)
+    TypeError:assert(type(value) == "number", "width", type(value), "number")
+
+    private[self].size.x = value
+end
+
+function Rectangle.__set:height(value)
+    TypeError:assert(type(value) == "number", "height", type(value), "number")
+
+    private[self].size.y = value
 end
 
 function Rectangle.__set:offset(value)
