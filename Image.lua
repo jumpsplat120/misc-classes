@@ -26,7 +26,7 @@ private[Image] = {}
 
 local internal, image_types_lut, image_types
 
-internal = math.uuid()
+internal = math.random()
 
 image_types_lut = {
     string              = true,
@@ -48,7 +48,7 @@ function Image:fromValues(image, x, y)
     TypeError:assert(type(y) == "number", "y", type(y), "number")
     TypeError:assert(image_types_lut[t], "image", t, image_types)
 
-    internal = math.uuid()
+    internal = math.random()
     
     --If the image already exists in the private[Image] table, then we just use
     --that one, rather than recreating it. That way, if a user tries to create
@@ -79,7 +79,7 @@ function Image:fromVector(image, position)
 
     VectorSizeError:assert(position.size == 2, position.size, 2)
 
-    internal = math.uuid()
+    internal = math.random()
     
     --If the image already exists in the private[Image] table, then we just use
     --that one, rather than recreating it. That way, if a user tries to create
@@ -116,19 +116,24 @@ function Image:new(opts)
     p.size   = Vector:fromValues(p.image:getDimensions())
     p.offset = Vector:fromValues(0, 0)
 
-    p.drawable.transform:translate(opts.position)
+    p.drawable.transform:translate(opts.position:unpack())
 end
 
     --======METHODS======--
 
-function Image:draw()
+--TODO: Create a Quad class, typecheck the quad; maybe create a different method?
+function Image:draw(quad)
     local p = private[self]
 
     love.graphics.push()
 
     Drawable.apply(self)
 
-    love.graphics.draw(p.image, p.offset.x, p.offset.y)
+    if quad then
+        love.graphics.draw(p.image, quad, p.offset:unpack())
+    else
+        love.graphics.draw(p.image, p.offset:unpack())
+    end
 
     love.graphics.pop()
 
@@ -151,12 +156,12 @@ function Image:isVisible(...)
 
     --Get each corner of the image's rectangle, pre-transformations.
     corners = {
-        p.offset:clone(),
-        p.offset + Vector:fromValues(p.size.x, 0),
-        p.offset + Vector:fromValues(0, p.size.y),
-        p.offset + p.size
+        { p.offset.x,            p.offset.y },
+        { p.offset.x + p.size.x, p.offset.y },
+        { p.offset.x           , p.offset.y + p.size.y },
+        { p.offset.x + p.size.x, p.offset.y + p.size.y }
     }
-
+    
     --If any of the corners exist within the window, then we can break early
     --and return true. The method only verifies that the image is visible, not
     --that the image is fully within the window. This isn't 100% truly accurate,
@@ -165,12 +170,12 @@ function Image:isVisible(...)
     --drawing images that don't exist, this works perfectly fine.
     for _, vector in ipairs(corners) do
         for _, transform in ipairs(args) do
-            transform:translateByVector(vector)
+            vector[1], vector[2] = transform:transform(vector[1], vector[2])
         end
+        
+        vector[1], vector[2] = self.transform:transform(vector[1], vector[2])
 
-        self.transform:transformVector(vector)
-
-        if vector.x >= 0 and vector.y >= 0 and vector.x < width and vector.y < height then
+        if vector[1] >= 0 and vector[2] >= 0 and vector[1] < width and vector[2] < height then
             return true
         end
     end
@@ -178,7 +183,36 @@ function Image:isVisible(...)
     return false
 end
 
+--TODO: Type check, validate wrapMode
+function Image:wrap(horizontal, vertical)
+    private[self].image:setWrap(horizontal, vertical)
+
+    return self
+end
+
+function Image:clone()
+    local p, image
+    
+    p = private[self]
+
+    image = getmetatable(self):fromValues(p.path or p.file_data or p.image_data or p.compressed_image_data, 0, 0)
+
+    image.offset:setToVector(p.offset)
+
+    image.transform.matrix = self.transform.matrix
+
+    return image
+end
+
     --======GETTERS======--
+
+function Image.__get:width()
+    return private[self].size.x
+end
+
+function Image.__get:height()
+    return private[self].size.y
+end
 
 function Image.__get:size()
     return private[self].size
