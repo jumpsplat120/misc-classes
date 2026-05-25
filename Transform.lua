@@ -1,12 +1,11 @@
 local Object, private
 local Transform
-local TypeError, VectorSizeError, TableLengthError
+local TypeError, TableLengthError
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
 TypeError        = require("classes.errors.TypeError")
-VectorSizeError  = require("classes.errors.VectorSizeError")
 TableLengthError = require("classes.errors.TableLengthError")
 
 Transform = Object:init()
@@ -73,22 +72,7 @@ function Transform:invert()
     return self
 end
 
---Move a `vector` using the transform.
-function Transform:transformVector(vector)
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(vector.siez == 2, vector.size, 2)
-
-    return vector:setToValues(private[self].transform:transformPoint(vector.x, vector.y))
-end
-
-function Transform:inverseTransformVector(vector)
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
-
-    return vector:setToValues(private[self].transform:inverseTransformPoint(vector.x, vector.y))
-end
-
-function Transform:transformValues(x, y)
+function Transform:transform(x, y)
     local p = private[self]
 
     TypeError:assert(type(x) == "number", "x", type(x), "number")
@@ -97,7 +81,7 @@ function Transform:transformValues(x, y)
     return p.transform:transformPoint(x, y)
 end
 
-function Transform:inverseTransformValues(x, y)
+function Transform:inverseTransform(x, y)
     local p = private[self]
 
     TypeError:assert(type(x) == "number", "x", type(x), "number")
@@ -126,35 +110,37 @@ function Transform:rotate(angle)
     return self
 end
 
-function Transform:scale(vector)
+function Transform:scale(x, y)
     local p = private[self]
 
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
+    y = y or x
 
-    p.transform:scale(vector:unpack())
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
+
+    p.transform:scale(x, y)
 
     return self
 end
 
-function Transform:shear(vector)
+function Transform:shear(x, y)
     local p = private[self]
 
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
     
-    p.transform:shear(vector:unpack())
+    p.transform:shear(x, y)
 
     return self
 end
 
-function Transform:translate(vector)
+function Transform:translate(x, y)
     local p = private[self]
 
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    VectorSizeError:assert(vector.size == 2, vector.size, 2)
+    TypeError:assert(type(x) == "number", "x", type(x), "number")
+    TypeError:assert(type(y) == "number", "y", type(y), "number")
     
-    p.transform:translate(vector:unpack())
+    p.transform:translate(x, y)
 
     return self
 end
