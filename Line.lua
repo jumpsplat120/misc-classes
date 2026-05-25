@@ -1,7 +1,8 @@
----@type Object
-local Object
-local Vector, Drawable
-local Line, private, is, TL
+local Object, private
+local Line
+local Vector
+local Drawable
+local is, TL
 local ParameterAmountError, VectorSizeError, RangeError, TypeError
 
 Object  = require("lib.Classy")
@@ -19,9 +20,7 @@ VectorSizeError      = require("classes.errors.VectorSizeError")
 RangeError           = require("classes.errors.RangeError")
 TypeError            = require("classes.errors.TypeError")
 
-Line = Object:extend()
-
-Line:implement(Drawable)
+Line = Object:init()
 
     --======PRIVATE FUNCTIONS======--
 
@@ -52,7 +51,7 @@ function Line:fromVectors(...)
         VectorSizeError:assert(vector.size == 2, vector.size, 2)
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Line{
         verify  = internal,
@@ -79,7 +78,7 @@ function Line:fromValues(...)
         vectors[#vectors + 1] = Vector:fromValues(x, y) 
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Line{
         verify  = internal,
@@ -108,7 +107,7 @@ function Line:fromTables(...)
         vectors[#vectors + 1] = Vector:fromValues(tbl[1], tbl[2])
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Line{
         verify  = internal,
@@ -391,7 +390,7 @@ function Line:clone()
         points[i] = v:clone()
     end
 
-    internal = math.uuid()
+    internal = math.random()
     clone    = Line{
         internal = internal,
         vectors  = points
@@ -472,16 +471,17 @@ end
 
 function Line:__tostring()
     local p = private[self]
-
-    if self.is_instance then return self:tostringHelper(
+    
+    return self:tostring(
         p.start,
         p.finish,
         p.curvy and "bezier" or "polyline"
-    ) end
-
-    return self:tostringHelper("Class")
+    )
 end
 
 Line.__type = "Line"
 
-return Line
+---@type Line.Class
+local Class = Object:create(Line, Drawable)
+
+return Class
