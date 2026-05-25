@@ -591,7 +591,7 @@ function Date:fromMSEpoch(ms, offset)
         RangeError:assert(-14 <= offset and offset <= 14, offset, "offset", -14, 14)
     end
 
-    internal = math.uuid()
+    internal = math.random()
     offset   = offset or 0
 
     if ms == 0 then
@@ -774,7 +774,7 @@ function Date:fromSecEpoch(seconds, offset)
         RangeError:assert(-14 <= offset and offset <= 14, offset, "offset", -14, 14)
     end
 
-    internal = math.uuid()
+    internal = math.random()
     offset   = offset or 0
     seconds  = seconds:round()
 
@@ -977,7 +977,7 @@ function Date:fromRFC3599(rfc3599)
         offset = (tonumber(off_hour) or 0) * 3600 + (tonumber(off_minute) or 0) * 60
     end
     
-    internal = math.uuid()
+    internal = math.random()
     
     return self {
         internal = internal,
@@ -1035,7 +1035,7 @@ function Date:fromISO8601(iso8601)
 
     offset = (tonumber(sign .. offset_hour, 10) or 0) + ((tonumber(sign .. offset_minute, 10) or 0) / 60)
     
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         internal = internal,
@@ -1074,7 +1074,7 @@ function Date:fromTable(tbl)
         TypeError:assert(is(tbl.offset, "number"), "offset", type(tbl.offset), "number")
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         internal = internal,
@@ -1094,7 +1094,7 @@ function Date:now()
     now    = os.date("*t")
     offset = os.tz_offset()
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         internal = internal,
@@ -1133,7 +1133,7 @@ end
 function Date:clone()
     local p = private[self]
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Date{
         internal = internal,

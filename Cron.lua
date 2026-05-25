@@ -19,7 +19,7 @@ private[Cron] = {}
 
 local internal
 
-internal = math.uuid()
+internal = math.random()
 
     --======CONSTRUCTOR======--
 
@@ -28,7 +28,7 @@ function Cron:after(delay, ...)
 
     TypeError:assert(type(delay) == "number", "delay", type(delay), "number")
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         args     = { ... },
@@ -43,7 +43,7 @@ function Cron:every(delay, ...)
 
     TypeError:assert(type(delay) == "number", "delay", type(delay), "number")
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         args     = { ... },

@@ -273,7 +273,7 @@ function Color:fromHSV(hue, saturation, value, alpha)
 
     red, green, blue, alpha = from.hsv(hue, saturation, value, alpha)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         red      = red,
@@ -314,7 +314,7 @@ function Color:fromHSL(hue, saturation, lightness, alpha)
 
     red, green, blue, alpha = from.hsl(hue, saturation, lightness, alpha)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         red      = red,
@@ -338,7 +338,7 @@ function Color:fromRGB(red, green, blue, alpha)
     RangeError:assert(0 <= green and green <= 1, green, "green", 0, 1)
     RangeError:assert(0 <= alpha and alpha <= 1, alpha, "alpha", 0, 1)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         red      = red,
@@ -362,7 +362,7 @@ function Color:fromRGB255(red, green, blue, alpha)
     RangeError:assert(0 <= green and green <= 255, green, "green", 0, 255)
     RangeError:assert(0 <= alpha and alpha <= 1, alpha, "alpha", 0, 1)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         red      = red / 255,
@@ -374,7 +374,7 @@ function Color:fromRGB255(red, green, blue, alpha)
 end
 
 function Color:fromHex(hex)
-    internal = math.uuid()
+    internal = math.random()
 
     TypeError:assert(type(hex) == "string", "hex", type(hex), "string")
     LengthError:assert(3 <= #hex and #hex <= 9, #hex, hex, 3, 9)
@@ -474,7 +474,7 @@ end
 function Color:clone()
     local p = private[self]
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         red      = p.values[1],

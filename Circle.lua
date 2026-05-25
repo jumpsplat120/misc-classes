@@ -31,7 +31,7 @@ valid_modes_lut = {
 
 valid_modes = table.join(valid_modes_lut, ", ", " and ")
 
-internal = math.uuid()
+internal = math.random()
 
     --======CONSTRUCTOR======--
 
@@ -45,7 +45,7 @@ function Circle:fromValues(mode, x, y, radius)
 
     InvalidError:assert(valid_modes_lut[mode], mode, "mode", valid_modes)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         mode     = mode,
@@ -66,7 +66,7 @@ function Circle:fromVector(mode, position, radius)
 
     VectorSizeError:assert(position.size == 2, position.size, 2)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         mode     = mode,

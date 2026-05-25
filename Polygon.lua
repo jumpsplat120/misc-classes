@@ -78,7 +78,7 @@ function Polygon:fromVectors(...)
         t[i] = v
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Polygon{
         vertices = t,
@@ -107,7 +107,7 @@ function Polygon:fromValues(...)
 
     ParameterAmountError:assert(not tmp, "An even amount of", select("#", ...))
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Polygon{
         vertices = t,
@@ -138,7 +138,7 @@ function Polygon:fromTable(tbl)
 
     TableAmountError:assert(not tmp, "An even amount of", #tbl)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Polygon{
         vertices = t,
@@ -155,7 +155,7 @@ function Polygon:fromShape(shape)
 
     t = private[Polygon][mt](shape)
 
-    internal = math.uuid()
+    internal = math.random()
 
     result = Polygon{
         vertices = t,

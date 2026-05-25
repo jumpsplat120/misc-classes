@@ -21,7 +21,7 @@ local pow, cbrt, sqrt, sin, cos, pi, tau
 local c1, c2, c3, c4, c5, n1, d1
 local x2t, Y, bezier
 
-internal = math.uuid()
+internal = math.random()
 
 directions_lut = {
     out    = true,
@@ -289,7 +289,7 @@ function Easings:back(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "back",
@@ -305,7 +305,7 @@ function Easings:cubic(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "cubic",
@@ -322,7 +322,7 @@ function Easings:bezier(start, finish)
     RangeError:assert(0 <= start.x and start.x <= 1, start.x, "start.x", 0, 1)
     RangeError:assert(0 <= finish.x and finish.x <= 1, finish.x, "finish.x", 0, 1)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "bezier",
@@ -334,7 +334,7 @@ function Easings:bezier(start, finish)
 end
 
 function Easings:linear()
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "linear",
@@ -350,7 +350,7 @@ function Easings:bounce(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "bounce",
@@ -366,7 +366,7 @@ function Easings:quintic(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "quintic",
@@ -382,7 +382,7 @@ function Easings:elastic(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "elastic",
@@ -398,7 +398,7 @@ function Easings:quartic(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "quartic",
@@ -414,7 +414,7 @@ function Easings:circular(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "circular",
@@ -430,7 +430,7 @@ function Easings:quadratic(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "quadratic",
@@ -446,7 +446,7 @@ function Easings:sinusoidal(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "sinusoidal",
@@ -462,7 +462,7 @@ function Easings:exponential(direction)
 
     InvalidError:assert(directions_lut[direction], direction, "direction", directions)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         type      = "exponential",

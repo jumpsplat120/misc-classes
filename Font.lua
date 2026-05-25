@@ -57,7 +57,7 @@ function Font:fromDefault(size, hinting, dpi)
 
     InvalidError:assert(private[Font].hinting[hinting], hinting, "hinting", symbols.hinting)
 
-    internal = math.uuid()
+    internal = math.random()
     
     return self {
         internal  = internal,
@@ -81,7 +81,7 @@ function Font:fromTTF(font_path, size, hinting, dpi)
 
     InvalidError:assert(private[Font].hinting[hinting], hinting, "hinting", symbols.hinting)
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Font{
         font_path = font_path,
@@ -97,7 +97,7 @@ function Font:fromBMF(font_path, image_path)
     TypeError:assert(is(font_path, "string"), "font_path", type(font_path), "string")
     TypeError:assert(is(image_path, "string"), "image_path", type(image_path), "string")
 
-    internal = math.uuid()
+    internal = math.random()
 
     return Font{
         image_path = image_path,
@@ -281,7 +281,7 @@ end
 function Font:clone()
     local p, font
     
-    internal = math.uuid()
+    internal = math.random()
 
     p    = private[self]
     font = Font{
