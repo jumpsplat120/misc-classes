@@ -240,7 +240,7 @@ function Vector:fromTable(tbl)
         TypeError:assert(type(v) == "number", "tbl[" .. tostring(i) .. "]", type(v), "number")
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         values   = tbl,
@@ -257,7 +257,7 @@ function Vector:fromValues(...)
         values[i] = v
     end
 
-    internal = math.uuid()
+    internal = math.random()
 
     return self {
         values   = values,
@@ -352,75 +352,6 @@ function Vector:setToValues(...)
         TypeError:assert(type(v) == "number", "<...>[" .. tostring(i) .. "]", type(v), "number")
     end
 
-    SizeError:assert(p.size == #args, self, p.size, "<...>", #args)
-
-    p.values    = args
-    p.magnitude = nil
-
-    return self
-end
-
---Shift this vector by the corresponding values in another vector. This should
---be done instead of `vec1 = vec1 + vec2`, since it avoids needing to create a
---new vector.
-function Vector:translateByVector(vector)
-    local pa, pb
-
-    pa = private[self]
-    pb = private[vector]
-
-    TypeError:assert(type(vector) == "vector", "vector", type(vector), "vector")
-    SizeError:assert(pa.size == pb.size, self, pa.size, vector, pb.size)
-
-    for i, v in ipairs(pb.values) do
-        pa.values[i] = pa.values[i] + v
-    end
-
-    pa.magnitude = nil
-
-    return self
-end
-
---Shift this vector by the corresponding values in a table. This should
---be done instead of `vec = vec + tbl`, since it avoids needing to create a
---new vector.
-function Vector:translateTable(tbl)
-    local p, values
-    
-    p      = private[self]
-    values = {}
-    
-    TypeError:assert(type(tbl) == "table", "tbl", type(tbl), "table")
-    SizeError:assert(p.size, self, p.size, tbl, #tbl)
-
-    --Validate all the values first before setting them.
-    for i, v in ipairs(tbl) do
-        TypeError:assert(type(v) == "number", "tbl[" .. tostring(i) .. "]", type(v), "number")
-
-        values[i] = p.values[i] + v
-    end
-
-    p.values    = values
-    p.magnitude = nil
-
-    return self
-end
-
---Shift this vector by the corresponding values provided.
-function Vector:translateByValues(...)
-    local p, args
-    
-    p    = private[self]
-    args = { ... }
-    
-    
-    --Validate all the values first before setting them.
-    for i, v in varargs(...) do
-        TypeError:assert(type(v) == "number", "<...>[" .. tostring(i) .. "]", type(v), "number")
-
-        args[i] = p.values[i] + v
-    end
-    
     SizeError:assert(p.size == #args, self, p.size, "<...>", #args)
 
     p.values    = args
@@ -583,7 +514,7 @@ function Vector:round()
 end
 
 function Vector:clone()
-    internal = math.uuid()
+    internal = math.random()
     
     return getmetatable(self) {
         values  = private[self].values,
