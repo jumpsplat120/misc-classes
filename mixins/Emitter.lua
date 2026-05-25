@@ -101,32 +101,31 @@ function Emitter:onceSync(event, callback, ...)
 end
 
 function Emitter:dispatch(event, ...)
-    local p, args, exists
+    local p, args, async, count
     
-    p    = private[self].emitter
-    args = { ... }
+    p     = private[self].emitter
+    args  = { ... }
+    async = p.async[event]
+    count = 0
 
     --If there are no async events, early exit.
-    if not p.async[event] then return self end
+    if not async then return self end
 
     --Call every async event that matches, and remove ones that only run once.
-    for callback, data in pairs(p.async[event]) do
+    for callback, data in pairs(async) do
+        count = count + 1
+
         Async(callback, self, table.unpack(table.imerge(data.args, args)))
 
         if data.once then
-            p.async[event][callback] = nil
+            async[callback] = nil
+
+            count = count - 1
         end
     end
 
-    --Check to see if the table has at least one item in it.
-    for _ in pairs(p.async[event]) do
-        exists = true
-
-        break
-    end
-
     --If the table has no items, remove the table.
-    if not exists then
+    if count == 0 then
         p.async[event] = nil
     end
 
@@ -134,32 +133,30 @@ function Emitter:dispatch(event, ...)
 end
 
 function Emitter:dispatchSync(event, ...)
-    local p, args, exists
+    local p, args, sync, count
     
-    p    = private[self].emitter
-    args = { ... }
+    p     = private[self].emitter
+    args  = { ... }
+    sync  = p.sync[event]
+    count = 0
 
     --If there are no sync events, early exit.
-    if not p.sync[event] then return self end
+    if not sync then return self end
 
     --Call every sync event that matches, and remove ones that only run once.
-    for callback, data in pairs(p.sync[event]) do
+    for callback, data in pairs(sync) do
+        count = count + 1
+
         callback(self, table.unpack(table.imerge(data.args, args)))
 
         if data.once then
-            p.sync[event][callback] = nil
+            sync[callback] = nil
+
+            count = count - 1
         end
     end
 
-    --Check to see if the table has at least one item in it.
-    for _ in pairs(p.sync[event]) do
-        exists = true
-
-        break
-    end
-
-    --If the table has no items, remove the table.
-    if not exists then
+    if count == 0 then
         p.sync[event] = nil
     end
 
