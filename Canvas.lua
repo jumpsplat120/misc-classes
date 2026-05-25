@@ -103,7 +103,7 @@ end
 function Canvas:draw()
     local p = private[self]
 
-    p.drawable.color:apply()
+    Drawable.apply(self)
     
     love.graphics.draw(
         p.canvas,
@@ -117,8 +117,6 @@ function Canvas:draw()
         p.drawable.shear.x,
         p.drawable.shear.y
     )
-
-    p.drawable.color:remove()
 end
 
     --======GETTERS======--
