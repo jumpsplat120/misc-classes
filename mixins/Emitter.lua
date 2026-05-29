@@ -32,7 +32,7 @@ end
 
     --======METHODS======--
 
-function Emitter:on(event, callback, ...)
+function Emitter:on(event, callback)
     local p = private[self].emitter
 
     TypeError:assert(type(event) == "string", "event", type(event), "string")
@@ -41,15 +41,13 @@ function Emitter:on(event, callback, ...)
     p.async[event] = p.async[event] or {}
 
     p.async[event][callback] = {
-        self = self,
-        args = { ... },
         once = false
     }
 
     return self
 end
 
-function Emitter:once(event, callback, ...)
+function Emitter:once(event, callback)
     local p = private[self].emitter
 
     TypeError:assert(type(event) == "string", "event", type(event), "string")
@@ -58,15 +56,13 @@ function Emitter:once(event, callback, ...)
     p.async[event] = p.async[event] or {}
 
     p.async[event][callback] = {
-        self = self,
-        args = { ... },
         once = true
     }
 
     return self
 end
 
-function Emitter:onSync(event, callback, ...)
+function Emitter:onSync(event, callback)
     local p = private[self].emitter
 
     TypeError:assert(type(event) == "string", "event", type(event), "string")
@@ -75,15 +71,13 @@ function Emitter:onSync(event, callback, ...)
     p.sync[event] = p.sync[event] or {}
     
     p.sync[event][callback] = {
-        self = self,
-        args = { ... },
         once = false
     }
 
     return self
 end
 
-function Emitter:onceSync(event, callback, ...)
+function Emitter:onceSync(event, callback)
     local p = private[self].emitter
 
     TypeError:assert(type(event) == "string", "event", type(event), "string")
@@ -92,8 +86,6 @@ function Emitter:onceSync(event, callback, ...)
     p.sync[event] = p.sync[event] or {}
     
     p.sync[event][callback] = {
-        self = self,
-        args = { ... },
         once = true
     }
 
@@ -101,10 +93,9 @@ function Emitter:onceSync(event, callback, ...)
 end
 
 function Emitter:dispatch(event, ...)
-    local p, args, async, count
+    local p, async, count
     
     p     = private[self].emitter
-    args  = { ... }
     async = p.async[event]
     count = 0
 
@@ -115,7 +106,7 @@ function Emitter:dispatch(event, ...)
     for callback, data in pairs(async) do
         count = count + 1
 
-        Async(callback, self, table.unpack(table.imerge(data.args, args)))
+        Async(callback, self, ...)
 
         if data.once then
             async[callback] = nil
@@ -133,10 +124,9 @@ function Emitter:dispatch(event, ...)
 end
 
 function Emitter:dispatchSync(event, ...)
-    local p, args, sync, count
+    local p, sync, count
     
     p     = private[self].emitter
-    args  = { ... }
     sync  = p.sync[event]
     count = 0
 
@@ -147,7 +137,7 @@ function Emitter:dispatchSync(event, ...)
     for callback, data in pairs(sync) do
         count = count + 1
 
-        callback(self, table.unpack(table.imerge(data.args, args)))
+        callback(self, ...)
 
         if data.once then
             sync[callback] = nil
@@ -164,7 +154,7 @@ function Emitter:dispatchSync(event, ...)
 end
 
 function Emitter:discard(event, callback)
-    local p = private[self]
+    local p = private[self].emitter
     
     if p.sync[event] then
         p.sync[event][callback] = nil
