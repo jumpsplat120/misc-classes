@@ -113,8 +113,8 @@ function Image:new(opts)
     p.image_data            = opts.image_data
     p.compressed_image_data = opts.compressed_image_data
 
-    p.size   = Vector:fromValues(p.image:getDimensions())
-    p.offset = Vector:fromValues(0, 0)
+    p.size   = { p.image:getDimensions() }
+    p.offset = { 0, 0 }
 
     p.drawable.transform:translate(opts.position:unpack())
 end
@@ -125,14 +125,14 @@ end
 function Image:draw(quad)
     local p = private[self]
 
-    love.graphics.push()
+    love.graphics.push("all")
 
     Drawable.apply(self)
 
     if quad then
-        love.graphics.draw(p.image, quad, p.offset:unpack())
+        love.graphics.draw(p.image, quad, p.offset[1], p.offset[2])
     else
-        love.graphics.draw(p.image, p.offset:unpack())
+        love.graphics.draw(p.image, p.offset[1], p.offset[2])
     end
 
     love.graphics.pop()
@@ -140,26 +140,24 @@ function Image:draw(quad)
     return self
 end
 
-function Image:isVisible(...)
-    local p, args, width, height, corners
-
+function Image:isVisible(width, height, ...)
+    local p, args, corners
+    
     p = private[self]
     
     args = { ... }
-
-    width, height = love.window.getMode()
 
     --We only need to checck the transforms once, so we do that before looping.
     for i, transform in varargs(...) do
         TypeError:assert(type(transform) == "transform", "<...>[" .. i .. "]", type(transform), "transform")
     end
-
+    
     --Get each corner of the image's rectangle, pre-transformations.
     corners = {
-        { p.offset.x,            p.offset.y },
-        { p.offset.x + p.size.x, p.offset.y },
-        { p.offset.x           , p.offset.y + p.size.y },
-        { p.offset.x + p.size.x, p.offset.y + p.size.y }
+        { p.offset[1],             p.offset[2] },
+        { p.offset[1] + p.size[1], p.offset[2] },
+        { p.offset[1],             p.offset[2] + p.size[2] },
+        { p.offset[1] + p.size[1], p.offset[2] + p.size[2] }
     }
     
     --If any of the corners exist within the window, then we can break early
@@ -168,14 +166,14 @@ function Image:isVisible(...)
     --since, if an image's bounding box doesn't actually have any art up to the
     --corner, it might not *literally* be visible. In the case of trying to cull
     --drawing images that don't exist, this works perfectly fine.
-    for _, vector in ipairs(corners) do
+    for _, corner in ipairs(corners) do
         for _, transform in ipairs(args) do
-            vector[1], vector[2] = transform:transform(vector[1], vector[2])
+            corner[1], corner[2] = transform:transform(corner[1], corner[2])
         end
         
-        vector[1], vector[2] = self.transform:transform(vector[1], vector[2])
-
-        if vector[1] >= 0 and vector[2] >= 0 and vector[1] < width and vector[2] < height then
+        corner[1], corner[2] = self.transform:transform(corner[1], corner[2])
+        
+        if corner[1] >= 0 and corner[2] >= 0 and corner[1] < width and corner[2] < height then
             return true
         end
     end
@@ -195,34 +193,61 @@ function Image:clone()
     
     p = private[self]
 
-    image = getmetatable(self):fromValues(p.path or p.file_data or p.image_data or p.compressed_image_data, 0, 0)
+    internal = math.random()
 
-    image.offset:setToVector(p.offset)
+    image = getmetatable(self) {
+        path                  = p.path, 
+        file_data             = p.file_data, 
+        image_data            = p.image_data, 
+        compressed_image_data = p.compressed_image_data, 
+        image    = p.image,
+        position = Vector:fromValues(0, 0),
+        internal = internal
+    }
 
-    image.transform.matrix = self.transform.matrix
+    private[image].offset[1] = p.offset[1]
+    private[image].offset[2] = p.offset[2]
+
+    private[image].drawable.transform.matrix = p.drawable.transform.matrix
 
     return image
 end
 
     --======GETTERS======--
 
+function Image.__get:ox()
+    return private[self].offset[1]
+end
+
+function Image.__get:oy()
+    return private[self].offset[2]
+end
+
 function Image.__get:width()
-    return private[self].size.x
+    return private[self].size[1]
 end
 
 function Image.__get:height()
-    return private[self].size.y
-end
-
-function Image.__get:size()
-    return private[self].size
-end
-
-function Image.__get:offset()
-    return private[self].offset
+    return private[self].size[2]
 end
 
     --======SETTERS======--
+
+function Image.__set:ox(value)
+    private[self].offset[1] = value
+end
+
+function Image.__set:oy(value)
+    private[self].offset[2] = value
+end
+
+function Image.__set:width(value)
+    private[self].size[1] = value
+end
+
+function Image.__set:height(value)
+    private[self].size[2] = value
+end
 
     --======METAMETHODS======--
 
