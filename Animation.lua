@@ -131,7 +131,7 @@ function Animation:shear(skew, easing)
     local p = private[self]
 
     TypeError:assert(type(skew) == "vector", "skew", type(skew), "vector")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    TypeError:assert(easing == nil or type(easing) == "easing", "easing", type(easing), "easing/nil")
     VectorSizeError:assert(skew.size == 2, skew.size, 2)
 
     table.insert(p.steps[p.step], {
@@ -149,7 +149,7 @@ function Animation:scale(size, easing)
     local p = private[self]
 
     TypeError:assert(type(size) == "vector", "size", type(size), "vector")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    TypeError:assert(easing == nil or type(easing) == "easing", "easing", type(easing), "easing/nil")
     VectorSizeError:assert(size.size == 2, size.size, 2)
 
     table.insert(p.steps[p.step], {
@@ -167,7 +167,7 @@ function Animation:rotate(angle, easing)
     local p = private[self]
     
     TypeError:assert(type(angle) == "number", "angle", type(angle), "number")
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
+    TypeError:assert(easing == nil or type(easing) == "easing", "easing", type(easing), "easing/nil")
 
     table.insert(p.steps[p.step], {
         start    = 0,
@@ -187,8 +187,8 @@ end
 function Animation:translate(distance, easing)
     local p = private[self]
 
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
     TypeError:assert(type(distance) == "vector", "distance", type(distance), "vector")
+    TypeError:assert(easing == nil or type(easing) == "easing", "easing", type(easing), "easing/nil")
     VectorSizeError:assert(distance.size == 2, distance.size, 2)
 
     table.insert(p.steps[p.step], {
@@ -205,8 +205,8 @@ end
 function Animation:custom(callback, easing)
     local p = private[self]
 
-    TypeError:assert(type(easing) == "easing", "easing", type(easing), "easing")
     TypeError:assert(type(callback) == "function", "callback", type(callback), "function")
+    TypeError:assert(easing == nil or type(easing) == "easing", "easing", type(easing), "easing/nil")
     
     table.insert(p.steps[p.step], {
         callback = callback
