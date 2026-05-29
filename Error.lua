@@ -201,7 +201,7 @@ end
 
 --If `bool` is `false`, then throws the error, along with all passed values.
 function Error:assert(bool, ...)
-    if bool then return bool end
+    if bool then return bool, ... end
     
     throw(self, ...)
 end
