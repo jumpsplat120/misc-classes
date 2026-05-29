@@ -89,7 +89,7 @@ function Circle:new(opts)
     p.radius = opts.radius
     p.offset = Vector:fromValues(0, 0)
 
-    p.drawable.transform:translate(opts.position)
+    p.drawable.transform:translate(opts.position:unpack())
 end
 
     --======METHODS======--
@@ -201,13 +201,13 @@ function Circle.__set:mode(value)
     private[self].mode = value
 end
 
-function Circle.__get:radius(value)
+function Circle.__set:radius(value)
     TypeError:assert(type(value) == "number", "radius", type(value), "number")
 
     private[self].radius = value
 end
 
-function Circle.__get:offset(value)
+function Circle.__set:offset(value)
     TypeError:assert(type(value) == "vector", "offset", type(value), "vector")
     VectorSizeError:assert(value.size == 2, value.size, 2)
 
