@@ -1,6 +1,7 @@
 local Object, private
 local Vector
 local Unpack, Ipairs, AsTable
+local Error
 local varargs, type
 local TypeError, VectorSizeError, ConstructorError, SizeError, SetOutOfBoundsError
 
@@ -10,6 +11,8 @@ private = require("lib.Classy.instances")
 Unpack  = require("classes.mixins.Unpack")
 Ipairs  = require("classes.mixins.Ipairs")
 AsTable = require("classes.mixins.AsTable")
+
+Error = require("classes.Error")
 
 type    = require("lib.extended_types")
 varargs = require("lib.varargs")
@@ -26,8 +29,10 @@ private[Vector] = {}
 
     --======PRIVATE FUNCTIONS======--
 
-local operations, internal
+local operations, internal, ZeroMagnitudeError
 local magnitude, vecmath
+
+ZeroMagnitudeError = Error("zero_magnitude", "You can't set the magnitude of a vector that has zero magnitude.")
 
 --Helper function that calculates the magnitude of a vector. Assumes flat
 --table of numbers. 
@@ -668,6 +673,8 @@ function Vector.__set:magnitude(value)
 
         return
     end
+
+    ZeroMagnitudeError:assert((p.magnitude or magnitude(p.values)) > 0)
 
     self:normalize():multiply(value)
 
