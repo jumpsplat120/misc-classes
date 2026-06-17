@@ -508,8 +508,8 @@ function Easings:__call(value)
     --Short circit if value is at the start or end; all easing functions
     --have the start and endpoints equal to a linear function. Otherwise,
     --it wouldn't really be an ease.
-    if value <= 0 then return value end
-    if value >= 1 then return value end
+    if value <= 0 then return 0 end
+    if value >= 1 then return 1 end
 
     return private[self].ease(value)
 end
