@@ -1,3 +1,3 @@
 local Error = require("classes.Error")
 
-return Error("file", "Issue with file '%s'; %s")
+return Error("file", "%s")
