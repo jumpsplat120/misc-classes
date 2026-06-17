@@ -126,7 +126,7 @@ end
 function Rectangle:draw()
     local p = private[self]
 
-    love.graphics.push()
+    love.graphics.push("all")
 
     Drawable.apply(self)
     
