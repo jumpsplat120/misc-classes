@@ -476,7 +476,7 @@ function Color:clone()
 
     internal = math.random()
 
-    return self {
+    return getmetatable(self) {
         red      = p.values[1],
         blue     = p.values[2],
         green    = p.values[3],
