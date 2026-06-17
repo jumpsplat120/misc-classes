@@ -1,3 +1,3 @@
 local Error = require("classes.Error")
 
-return Error("circular_reference", "Found circular reference in table.")
+return Error("circular_reference", "Found a circular reference.")
