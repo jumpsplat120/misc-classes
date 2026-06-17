@@ -147,6 +147,9 @@ function Image:isVisible(width, height, ...)
     
     args = { ... }
 
+    TypeError:assert(type(width) == "number", "width", type(width), "number")
+    TypeError:assert(type(height) == "number", "height", type(height), "number")
+
     --We only need to checck the transforms once, so we do that before looping.
     for i, transform in varargs(...) do
         TypeError:assert(type(transform) == "transform", "<...>[" .. i .. "]", type(transform), "transform")
