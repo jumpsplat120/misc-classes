@@ -72,7 +72,7 @@ function Polygon:fromVectors(...)
     local t = {}
 
     for i, v in varargs(...) do
-        TypeError:assert(is(v, Vector), TL("args[%{i}]", { i = i }), type(v), Vector)
+        TypeError:assert(is(v, Vector), TL("<...>[%{i}]", { i = i }), type(v), Vector)
         VectorSizeError:assert(v.size == 2, v.size, 2)
 
         t[i] = v
@@ -92,7 +92,7 @@ function Polygon:fromValues(...)
     t = {}
 
     for i, v in varargs(...) do
-        TypeError:assert(is(v, "number"), TL("args[%{i}]", { i = i }), type(v), "number")
+        TypeError:assert(is(v, "number"), TL("<...>[%{i}]", { i = i }), type(v), "number")
         
         if not tmp then
             tmp = Vector:fromValues(v, 0)
@@ -123,7 +123,7 @@ function Polygon:fromTable(tbl)
     t = {}
 
     for i, v in ipairs(tbl) do
-        TypeError:assert(is(v, "number"), TL("args[%{i}]", { i = i }), type(v), "number")
+        TypeError:assert(is(v, "number"), TL("<...>[%{i}]", { i = i }), type(v), "number")
         
         if not tmp then
             tmp = Vector:fromValues(v, 0)
