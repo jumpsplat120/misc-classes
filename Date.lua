@@ -1,17 +1,12 @@
 local Object, private
-local Date, Error
+local Date
+local Error
 local PatternError, ConstructorError, TypeError, UnsetError, InvalidError, RangeError
-local is, TL
 
 Object  = require("lib.Classy")
 private = require("lib.Classy.instances")
 
-TL      = require("lib.string_template")
-is      = require("lib.is")
-
 Error = require("classes.Error")
-
-Date = Object:init()
 
 TypeError        = require("classes.errors.TypeError")
 RangeError       = require("classes.errors.RangeError")
@@ -20,14 +15,20 @@ InvalidError     = require("classes.errors.InvalidError")
 PatternError     = require("classes.errors.PatternError")
 ConstructorError = require("classes.errors.ConstructorError")
 
+Date = Object:init()
+
 --======PRIVATE FUNCTIONS======--
 
 local validateDate, isLeapYear, elapsedDaysInYear
-local internal, RFC3599, ISO8601, days_in_month, month_names
-local day_names, months_str, seconds_in, month_lookup
+local internal, RFC3599, ISO8601
+local DAYS, MONTHS, SECONDS_IN, DAYS_IN_MONTH
+local months_lut, months_str
 local ISO8601Error, LeapYearError, FebruaryError
 
+internal = math.random()
+
 RFC3599  = "^(%d%d%d%d)%-(%d%d)%-(%d%d)[Tt](%d%d%.?%d*):(%d%d):(%d%d)()"
+
 ISO8601 = {
     date = {
         "(%d%d%d%d)%-(1[012])%-([012]%d)",
@@ -496,54 +497,54 @@ ISO8601 = {
     }
 }
 
-seconds_in = {
+SECONDS_IN = {
     minute = 60
 }
 
-seconds_in.hour  = seconds_in.minute  * 60
-seconds_in.day   = seconds_in.hour    * 24
-seconds_in.week  = seconds_in.day     * 7
-seconds_in.year  = seconds_in.day     * 365
-seconds_in.leap_year = seconds_in.day * 366
+SECONDS_IN.hour      = SECONDS_IN.minute * 60
+SECONDS_IN.day       = SECONDS_IN.hour   * 24
+SECONDS_IN.week      = SECONDS_IN.day    * 7
+SECONDS_IN.year      = SECONDS_IN.day    * 365
+SECONDS_IN.leap_year = SECONDS_IN.day    * 366
 
-days_in_month = { 
-    31, 29, 31, 30, 31, 30,
-    31, 31, 30, 31, 30, 31
-}
-
-month_names = {
-    "january", "february", "march", "april", "may",
-    "june", "july", "august", "september", "october",
-    "november", "december"
-}
-
-day_names = {
+DAYS = {
     "sunday", "monday", "tuesday",
     "wednesday", "thursday", "friday",
     "saturday"
 }
 
-month_lookup = {
+MONTHS = {
+    "january", "february", "march", "april", "may",
+    "june", "july", "august", "september", "october",
+    "november", "december"
+}
+
+DAYS_IN_MONTH = { 
+    31, 29, 31, 30, 31, 30,
+    31, 31, 30, 31, 30, 31
+}
+
+months_lut = {
     0, 3, 2, 5,
     0, 3, 5, 1,
     4, 6, 2, 4
 }
 
-months_str = table.join(month_names, "/")
+months_str = table.join(MONTHS, "/")
 
 ISO8601Error  = Error("iso8601", "'%s' could not be parsed as a valid ISO8601 datetime string.")
 LeapYearError = Error("leap_year", "The year '%s' is not a leap year.")
 FebruaryError = Error("february", "Feburary only has 28 days in the year '%s'.")
 
 function isLeapYear(year)
-    return year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
+    return (year % 4 == 0 and year % 100 ~= 0) or year % 400 == 0
 end
 
 function validateDate(second, minute, hour, day, month, year)
     local leap, days
     
     leap = isLeapYear(year)
-    days = days_in_month[month]
+    days = DAYS_IN_MONTH[month]
 
     if month == 2 and day == 29 then
         LeapYearError:assert(leap, year)
@@ -553,7 +554,7 @@ function validateDate(second, minute, hour, day, month, year)
         FebruaryError:assert(day <= 28, day)
     end
 
-    RangeError:assert(1 <= day and day <= days, day, TL("date.day <%{month}>", { month = month_names[month] }), 1, days)
+    RangeError:assert(1 <= day and day <= days, day, "date.day", 1, days)
     RangeError:assert(0 <= hour and hour <= 23, hour, "date.hour", 0, 23)
     RangeError:assert(0 <= minute and minute <= 59, minute, "date.minute", 0, 59)
     RangeError:assert(0 <= second and second <= 59, second, "date.second", 0, 59)
@@ -569,61 +570,62 @@ function elapsedDaysInYear(date)
         if i == 2 then
             result = result + (leap and 29 or 28)
         else
-            result = result + days_in_month[i]
+            result = result + DAYS_IN_MONTH[i]
         end
     end
 
-    result = result + (date.second + (date.minute * seconds_in.minute) + (date.hour * seconds_in.hour)) / seconds_in.day
+    result = result + (date.second + (date.minute * SECONDS_IN.minute) + (date.hour * SECONDS_IN.hour)) / SECONDS_IN.day
 
     return result
 end
 
 --======CONSTRUCTOR======--
 
-function Date:fromMSEpoch(ms, offset)
-    local day, year, hour, month, minute, second, seconds,  round, partial
+function Date:fromMSEpoch(milliseconds, offset)
+    local now, seconds, seconds_this_year, round, partial
 
-
-    TypeError:assert(is(ms, "number"), "ms", type(ms), "number")
+    TypeError:assert(type(milliseconds) == "number", "milliseconds", type(milliseconds), "number")
 
     if offset then
-        TypeError:assert(is(offset, "number"), "offset", type(offset), "number")
+        TypeError:assert(type(offset) == "number", "offset", type(offset), "number")
         RangeError:assert(-14 <= offset and offset <= 14, offset, "offset", -14, 14)
     end
 
-    internal = math.random()
     offset   = offset or 0
+    internal = math.random()
 
-    if ms == 0 then
-        local now = os.date("*t")
+    if milliseconds == 0 then
+        now = os.date("*t")
 
-        return Date{
-            internal = internal,
-            offset = offset,
-            minute = now.min,
-            second = now.sec,
-            month  = now.month,
-            year   = now.year,
-            hour   = now.hour,
-            day    = now.day
+        return self {
+            day      = now.day,
+            year     = now.year,
+            hour     = now.hour,
+            month    = now.month,
+            minute   = now.min,
+            second   = now.sec,
+            offset   = offset,
+            internal = internal
         }
     end
 
-    day    = 0
-    year   = 1970
-    hour   = 0
-    month  = 0
-    minute = 0
-    second = 0
+    now = {
+        day    = 0,
+        year   = 1970,
+        hour   = 0,
+        month  = 0,
+        minute = 0,
+        second = 0
+    }
 
-    seconds = math.round(ms / 1000)
+    seconds = math.round(milliseconds / 1000)
 
     if seconds > 0 then
-        seconds = seconds + offset * seconds_in.hour
+        seconds = seconds + offset * SECONDS_IN.hour
 
-        if seconds >= seconds_in.year then
+        if seconds >= SECONDS_IN.year then
             while true do
-                local seconds_this_year = isLeapYear(year) and seconds_in.leap_year or seconds_in.year
+                seconds_this_year = isLeapYear(now.year) and SECONDS_IN.leap_year or SECONDS_IN.year
 
                 seconds = seconds - seconds_this_year
 
@@ -633,51 +635,51 @@ function Date:fromMSEpoch(ms, offset)
                     break
                 end
 
-                year = year + 1
+                now.year = now.year + 1
             end
         end
 
-        if seconds >= seconds_in.day then
-            partial = seconds / seconds_in.day
+        if seconds >= SECONDS_IN.day then
+            partial = seconds / SECONDS_IN.day
             round   = math.floor(partial)
 
-            day = round + 1
+            now.day = round + 1
 
-            seconds = seconds - (round * seconds_in.day)
+            seconds = seconds - (round * SECONDS_IN.day)
         end
 
-        if seconds >= seconds_in.hour then
-            partial = seconds / seconds_in.hour
+        if seconds >= SECONDS_IN.hour then
+            partial = seconds / SECONDS_IN.hour
             round   = math.floor(partial)
             
-            hour = round
+            now.hour = round
 
-            seconds = seconds - (round * seconds_in.hour)
+            seconds = seconds - (round * SECONDS_IN.hour)
         end
 
-        if seconds >= seconds_in.minute then
-            partial = seconds / seconds_in.minute
+        if seconds >= SECONDS_IN.minute then
+            partial = seconds / SECONDS_IN.minute
             round   = math.floor(partial)
 
-            minute = round
+            now.minute = round
 
-            seconds = seconds - (round * seconds_in.minute)
+            seconds = seconds - (round * SECONDS_IN.minute)
         end
 
-        second = seconds
+        now.second = seconds
 
-        if day > 31 then
-            for i, days in ipairs(days_in_month) do
-                month = month + 1
+        if now.day > 31 then
+            for i, days in ipairs(DAYS_IN_MONTH) do
+                now.month = now.month + 1
 
                 if i == 2 then
-                    day = day - (isLeapYear(year) and 29 or 28)
+                    now.day = now.day - (isLeapYear(now.year) and 29 or 28)
                 else
-                    day = day - days
+                    now.day = now.day - days
                 end
 
-                if day <= 0 then
-                    day = day + days
+                if now.day <= 0 then
+                    now.day = now.day + days
 
                     break
                 end
@@ -686,15 +688,15 @@ function Date:fromMSEpoch(ms, offset)
     end
 
     if seconds < 0 then
-        seconds = seconds - offset * seconds_in.hour
+        seconds = seconds - offset * SECONDS_IN.hour
 
-        if seconds * -1 >= seconds_in.year then
+        if seconds * -1 >= SECONDS_IN.year then
             while true do
-                local seconds_this_year = isLeapYear(year - 1) and seconds_in.leap_year or seconds_in.year
+                seconds_this_year = isLeapYear(now.year - 1) and SECONDS_IN.leap_year or SECONDS_IN.year
 
                 seconds = seconds + seconds_this_year
 
-                year = year - 1
+                now.year = now.year - 1
 
                 if seconds > 0 then
                     seconds = seconds - seconds_this_year
@@ -704,47 +706,47 @@ function Date:fromMSEpoch(ms, offset)
             end
         end
         
-        if seconds * -1 >= seconds_in.day then
-            partial = seconds / seconds_in.day
+        if seconds * -1 >= SECONDS_IN.day then
+            partial = seconds / SECONDS_IN.day
             round   = math.ceil(partial)
             
-            day = (isLeapYear(year) and 366 or 365) + round
+            now.day = (isLeapYear(now.year) and 366 or 365) + round
 
-            seconds = seconds - (round * seconds_in.day)
+            seconds = seconds - (round * SECONDS_IN.day)
         end
 
-        if seconds * -1 >= seconds_in.hour then
-            partial = seconds / seconds_in.hour
+        if seconds * -1 >= SECONDS_IN.hour then
+            partial = seconds / SECONDS_IN.hour
             round   = math.ceil(partial)
 
-            hour = 23 + round
+            now.hour = 23 + round
 
-            seconds = seconds - (round * seconds_in.hour)
+            seconds = seconds - (round * SECONDS_IN.hour)
         end
 
-        if seconds * -1 >= seconds_in.minute then
-            partial = seconds / seconds_in.minute
+        if seconds * -1 >= SECONDS_IN.minute then
+            partial = seconds / SECONDS_IN.minute
             round   = math.ceil(partial)
 
-            minute = 59 + round
+            now.minute = 59 + round
 
-            seconds = seconds - (round * seconds_in.minute)
+            seconds = seconds - (round * SECONDS_IN.minute)
         end
 
-        second = 60 + seconds
+        now.second = 60 + seconds
         
-        if day > 31 then
-            for i, days in ipairs(days_in_month) do
-                month = month + 1
+        if now.day > 31 then
+            for i, days in ipairs(DAYS_IN_MONTH) do
+                now.month = now.month + 1
 
                 if i == 2 then
-                    day = day - (isLeapYear(year) and 29 or 28)
+                    now.day = now.day - (isLeapYear(now.year) and 29 or 28)
                 else
-                    day = day - days
+                    now.day = now.day - days
                 end
 
-                if day <= 0 then
-                    day = day + days
+                if now.day <= 0 then
+                    now.day = now.day + days
 
                     break
                 end
@@ -753,59 +755,62 @@ function Date:fromMSEpoch(ms, offset)
     end
 
     return self {
-        internal = internal,
-        offset = offset,
-        minute = minute,
-        second = second,
-        month  = month,
-        year   = year,
-        hour   = hour,
-        day    = day
+        day      = now.day,
+        year     = now.year,
+        hour     = now.hour,
+        month    = now.month,
+        minute   = now.minute,
+        second   = now.second,
+        offset   = offset,
+        internal = internal
     }
 end
 
 function Date:fromSecEpoch(seconds, offset)
-    local day, year, hour, month, minute, second, round, partial
+    local now, round, partial, seconds_this_year
 
-    TypeError:assert(is(seconds, "number"), "seconds", type(seconds), "number")
+    TypeError:assert(type(seconds) == "number", "seconds", type(seconds), "number")
 
     if offset then
-        TypeError:assert(is(offset, "number"), "offset", type(offset), "number")
+        TypeError:assert(type(offset) == "number", "offset", type(offset), "number")
         RangeError:assert(-14 <= offset and offset <= 14, offset, "offset", -14, 14)
     end
 
-    internal = math.random()
+    
     offset   = offset or 0
     seconds  = seconds:round()
+    internal = math.random()
 
     if seconds == 0 then
-        local now = os.date("*t")
+        now = os.date("*t")
 
-        return Date{
-            internal = internal,
-            offset = offset,
-            minute = now.min,
-            second = now.sec,
-            month  = now.month,
-            year   = now.year,
-            hour   = now.hour,
-            day    = now.day
+        return self {
+            day      = now.day,
+            hour     = now.hour,
+            year     = now.year,
+            month    = now.month,
+            minute   = now.min,
+            second   = now.sec,
+            offset   = offset,
+            internal = internal
         }
     end
 
-    day    = 0
-    year   = 1970
-    hour   = 0
-    month  = 0
-    minute = 0
-    second = 0
+    now = {
+        day    = 0,
+        year   = 1970,
+        hour   = 0,
+        month  = 0,
+        minute = 0,
+        second = 0
+    }
 
     if seconds > 0 then
-        seconds = seconds + offset * seconds_in.hour
+        seconds = seconds + offset * SECONDS_IN.hour
 
-        if seconds >= seconds_in.year then
+        if seconds >= SECONDS_IN.year then
             while true do
-                local seconds_this_year = isLeapYear(year) and seconds_in.leap_year or seconds_in.year
+                seconds_this_year = isLeapYear(now.year) and SECONDS_IN.leap_year or SECONDS_IN.year
 
                 seconds = seconds - seconds_this_year
 
@@ -815,51 +820,51 @@ function Date:fromSecEpoch(seconds, offset)
                     break
                 end
 
-                year = year + 1
+                now.year = now.year + 1
             end
         end
 
-        if seconds >= seconds_in.day then
-            partial = seconds / seconds_in.day
+        if seconds >= SECONDS_IN.day then
+            partial = seconds / SECONDS_IN.day
             round   = math.floor(partial)
 
-            day = round + 1
+            now.day = round + 1
 
-            seconds = seconds - (round * seconds_in.day)
+            seconds = seconds - (round * SECONDS_IN.day)
         end
 
-        if seconds >= seconds_in.hour then
-            partial = seconds / seconds_in.hour
+        if seconds >= SECONDS_IN.hour then
+            partial = seconds / SECONDS_IN.hour
             round   = math.floor(partial)
             
-            hour = round
+            now.hour = round
 
-            seconds = seconds - (round * seconds_in.hour)
+            seconds = seconds - (round * SECONDS_IN.hour)
         end
 
-        if seconds >= seconds_in.minute then
-            partial = seconds / seconds_in.minute
+        if seconds >= SECONDS_IN.minute then
+            partial = seconds / SECONDS_IN.minute
             round   = math.floor(partial)
 
-            minute = round
+            now.minute = round
 
-            seconds = seconds - (round * seconds_in.minute)
+            seconds = seconds - (round * SECONDS_IN.minute)
         end
 
-        second = seconds
+        now.second = seconds
 
-        if day > 31 then
-            for i, days in ipairs(days_in_month) do
-                month = month + 1
+        if now.day > 31 then
+            for i, days in ipairs(DAYS_IN_MONTH) do
+                now.month = now.month + 1
 
                 if i == 2 then
-                    day = day - (isLeapYear(year) and 29 or 28)
+                    now.day = now.day - (isLeapYear(now.year) and 29 or 28)
                 else
-                    day = day - days
+                    now.day = now.day - days
                 end
 
-                if day <= 0 then
-                    day = day + days
+                if now.day <= 0 then
+                    now.day = now.day + days
 
                     break
                 end
@@ -868,15 +873,15 @@ function Date:fromSecEpoch(seconds, offset)
     end
 
     if seconds < 0 then
-        seconds = seconds - offset * seconds_in.hour
+        seconds = seconds - offset * SECONDS_IN.hour
 
-        if seconds * -1 >= seconds_in.year then
+        if seconds * -1 >= SECONDS_IN.year then
             while true do
-                local seconds_this_year = isLeapYear(year - 1) and seconds_in.leap_year or seconds_in.year
+                seconds_this_year = isLeapYear(now.year - 1) and SECONDS_IN.leap_year or SECONDS_IN.year
 
                 seconds = seconds + seconds_this_year
 
-                year = year - 1
+                now.year = now.year - 1
 
                 if seconds > 0 then
                     seconds = seconds - seconds_this_year
@@ -886,47 +891,47 @@ function Date:fromSecEpoch(seconds, offset)
             end
         end
         
-        if seconds * -1 >= seconds_in.day then
-            partial = seconds / seconds_in.day
+        if seconds * -1 >= SECONDS_IN.day then
+            partial = seconds / SECONDS_IN.day
             round   = math.ceil(partial)
             
-            day = (isLeapYear(year) and 366 or 365) + round
+            now.day = (isLeapYear(now.year) and 366 or 365) + round
 
-            seconds = seconds - (round * seconds_in.day)
+            seconds = seconds - (round * SECONDS_IN.day)
         end
 
-        if seconds * -1 >= seconds_in.hour then
-            partial = seconds / seconds_in.hour
+        if seconds * -1 >= SECONDS_IN.hour then
+            partial = seconds / SECONDS_IN.hour
             round   = math.ceil(partial)
 
-            hour = 23 + round
+            now.hour = 23 + round
 
-            seconds = seconds - (round * seconds_in.hour)
+            seconds = seconds - (round * SECONDS_IN.hour)
         end
 
-        if seconds * -1 >= seconds_in.minute then
-            partial = seconds / seconds_in.minute
+        if seconds * -1 >= SECONDS_IN.minute then
+            partial = seconds / SECONDS_IN.minute
             round   = math.ceil(partial)
 
-            minute = 59 + round
+            now.minute = 59 + round
 
-            seconds = seconds - (round * seconds_in.minute)
+            seconds = seconds - (round * SECONDS_IN.minute)
         end
 
-        second = 60 + seconds
+        now.second = 60 + seconds
         
-        if day > 31 then
-            for i, days in ipairs(days_in_month) do
-                month = month + 1
+        if now.day > 31 then
+            for i, days in ipairs(DAYS_IN_MONTH) do
+                now.month = now.month + 1
 
                 if i == 2 then
-                    day = day - (isLeapYear(year) and 29 or 28)
+                    now.day = now.day - (isLeapYear(now.year) and 29 or 28)
                 else
-                    day = day - days
+                    now.day = now.day - days
                 end
 
-                if day <= 0 then
-                    day = day + days
+                if now.day <= 0 then
+                    now.day = now.day + days
 
                     break
                 end
@@ -935,25 +940,25 @@ function Date:fromSecEpoch(seconds, offset)
     end
 
     return self {
+        day      = now.day,
+        year     = now.year,
+        hour     = now.hour,
+        month    = now.month,
+        minute   = now.minute,
+        second   = now.second,
+        offset   = offset,
         internal = internal,
-        offset = offset,
-        minute = minute,
-        second = second,
-        month  = month,
-        year   = year,
-        hour   = hour,
-        day    = day
     }
 end
 
-function Date:fromRFC3599(rfc3599)
-    local year, month, day, hour, minute, second, offset, pattern_end
+function Date:fromRFC3599(datestamp)
+    local year, month, day, hour, minute, second, offset, end_index
 
-    TypeError:assert(is(rfc3599, "string"), "rfc3599", type(rfc3599), "string")
+    TypeError:assert(type(datestamp) == "string", "datestamp", type(datestamp), "string")
 
-    year, month, day, hour, minute, second, pattern_end = rfc3599:match(RFC3599)
+    year, month, day, hour, minute, second, end_index = datestamp:match(RFC3599)
     
-    PatternError:assert(year, rfc3599, RFC3599)
+    PatternError:assert(year, datestamp, RFC3599)
     
     day    = tonumber(day)
     year   = tonumber(year)
@@ -964,47 +969,43 @@ function Date:fromRFC3599(rfc3599)
     offset = 0
 
     validateDate(second, minute, hour, day, month, year)
-
-    if not rfc3599:match("^[Zz]", pattern_end) then
-        local pattern, off_hour, off_minute
     
-        pattern = "^([+-]%d%d):(%d%d)"
+    if not datestamp:match("^[Zz]", end_index) then
+        offset = { datestamp:match("^([+-]%d%d):(%d%d)", end_index) }
 
-        off_hour, off_minute = rfc3599:match(pattern, pattern_end)
-
-        PatternError:assert(hour, rfc3599, pattern)
+        PatternError:assert(#offset == 2, datestamp, "^([+-]%d%d):(%d%d)")
         
-        offset = (tonumber(off_hour) or 0) * 3600 + (tonumber(off_minute) or 0) * 60
+        offset = tonumber(offset[1]) * 3600 + tonumber(offset[2]) * 60
     end
     
     internal = math.random()
     
     return self {
-        internal = internal,
-        offset = offset,
-        minute = minute,
-        second = second,
-        month  = month,
-        year   = year,
-        hour   = hour,
-        day    = day
+        day      = day,
+        year     = year,
+        hour     = hour,
+        month    = month,
+        minute   = minute,
+        second   = second,
+        offset   = offset,
+        internal = internal
     }
 end
 
-function Date:fromISO8601(iso8601)
-    local year, month, day, hour, minute, second, ms, sign, offset_hour, offset_minute
+function Date:fromISO8601(datestamp)
+    local year, month, day, hour, minute, second, ms, sign, offset, offset_hour, offset_minutes
 
-    TypeError:assert(is(iso8601, "string"), "iso8601", type(iso8601), "string")
+    TypeError:assert(type(datestamp) == "string", "datestamp", type(datestamp), "string")
 
     for _, pattern in pairs(ISO8601.compiled) do
-        year, month, day, hour, minute, second, ms, sign, offset_hour, offset_minute = iso8601:match(pattern)
+        year, month, day, hour, minute, second, ms, sign, offset_hour, offset_minutes = datestamp:match(pattern)
 
         if year then break end
     end
 
     -- milliseconds are optional, so offset might be stored in ms
-    if not offset_minute and ms and ms:match("^[+-]") then
-        offset_minute = offset_hour
+    if not offset_minutes and ms and ms:match("^[+-]") then
+        offset_minutes = offset_hour
         offset_hour   = sign
         sign          = ms
         ms            = 0
@@ -1016,13 +1017,13 @@ function Date:fromISO8601(iso8601)
 
     if not year then
         for _, pattern in pairs(ISO8601.date) do
-            year, month, day = iso8601:match("^" .. pattern .. "$")
+            year, month, day = datestamp:match("^" .. pattern .. "$")
     
             if year then break end
         end
     end
 
-    ISO8601Error:assert(year, iso8601)
+    ISO8601Error:assert(year, datestamp)
     
     day    = tonumber(day,    10) or 1
     year   = tonumber(year,   10)
@@ -1033,58 +1034,58 @@ function Date:fromISO8601(iso8601)
     
     validateDate(second, minute, hour, day, month, year)
 
-    offset = (tonumber(sign .. offset_hour, 10) or 0) + ((tonumber(sign .. offset_minute, 10) or 0) / 60)
+    offset = (tonumber(sign .. offset_hour, 10) or 0) + ((tonumber(sign .. offset_minutes, 10) or 0) / 60)
     
     internal = math.random()
 
     return self {
-        internal = internal,
-        offset = offset,
-        minute = minute,
-        second = second,
-        month  = month,
-        year   = year,
-        hour   = hour,
-        day    = day
+        day      = day,
+        year     = year,
+        hour     = hour,
+        month    = month,
+        minute   = minute,
+        second   = second,
+        offset   = offset,
+        internal = internal
     }
 end
 
-function Date:fromTable(tbl)
-    TypeError:assert(is(tbl, "table"), "tbl", type(tbl), "table")
+function Date:fromTable(data)
+    TypeError:assert(type(data) == "table", "data", type(data), "table")
     
-    UnsetError:assert(tbl.year,   "tbl.year",   "date")
-    UnsetError:assert(tbl.month,  "tbl.month",  "date")
-    UnsetError:assert(tbl.day,    "tbl.day",    "date")
-    UnsetError:assert(tbl.hour,   "tbl.hour",   "date")
-    UnsetError:assert(tbl.minute, "tbl.minute", "date")
-    UnsetError:assert(tbl.second, "tbl.second", "date")
+    UnsetError:assert(data.day, "data.day", "date")
+    UnsetError:assert(data.year, "data.year", "date")
+    UnsetError:assert(data.hour, "data.hour", "date")
+    UnsetError:assert(data.month, "data.month", "date")
+    UnsetError:assert(data.minute, "data.minute", "date")
+    UnsetError:assert(data.second, "data.second", "date")
     
-    TypeError:assert(is(tbl.year,   "number"), "tbl.year",   type(tbl.year),   "number")
-    TypeError:assert(is(tbl.month,  "number"), "tbl.month",  type(tbl.month),  "number")
-    TypeError:assert(is(tbl.day,    "number"), "tbl.day",    type(tbl.day),    "number")
-    TypeError:assert(is(tbl.hour,   "number"), "tbl.hour",   type(tbl.hour),   "number")
-    TypeError:assert(is(tbl.minute, "number"), "tbl.minute", type(tbl.minute), "number")
-    TypeError:assert(is(tbl.second, "number"), "tbl.second", type(tbl.second), "number")
+    TypeError:assert(type(data.day) == "number", "data.day", type(data.day), "number")
+    TypeError:assert(type(data.hour) == "number", "data.hour", type(data.hour), "number")
+    TypeError:assert(type(data.year) == "number", "data.year", type(data.year), "number")
+    TypeError:assert(type(data.month) == "number", "data.month", type(data.month), "number")
+    TypeError:assert(type(data.minute) == "number", "data.minute", type(data.minute), "number")
+    TypeError:assert(type(data.second) == "number", "data.second", type(data.second), "number")
 
-    validateDate(tbl.second, tbl.minute, tbl.hour, tbl.day, tbl.month, tbl.year)
+    validateDate(data.second, data.minute, data.hour, data.day, data.month, data.year)
 
-    tbl.offset = tbl.offset or tbl.tz_offset
+    data.offset = data.offset or data.tz_offset
 
-    if tbl.offset then
-        TypeError:assert(is(tbl.offset, "number"), "offset", type(tbl.offset), "number")
+    if data.offset then
+        TypeError:assert(type(data.offset) == "number", "offset", type(data.offset), "number")
     end
 
     internal = math.random()
 
     return self {
+        day      = data.day,
+        year     = data.year,
+        hour     = data.hour,
+        month    = data.month,
+        minute   = data.minute,
+        second   = data.second,
+        offset   = data.offset or 0,
         internal = internal,
-        offset = offset or 0,
-        minute = tbl.minute,
-        second = tbl.second,
-        month  = tbl.month,
-        year   = tbl.year,
-        hour   = tbl.hour,
-        day    = tbl.day
     }
 end
 
@@ -1097,14 +1098,14 @@ function Date:now()
     internal = math.random()
 
     return self {
-        internal = internal,
-        offset = offset,
-        minute = now.min,
-        second = now.sec,
-        month  = now.month,
-        year   = now.year,
-        hour   = now.hour,
-        day    = now.day
+        day      = now.day,
+        year     = now.year,
+        hour     = now.hour,
+        month    = now.month,
+        minute   = now.min,
+        second   = now.sec,
+        offset   = offset,
+        internal = internal
     }
 end
 
@@ -1125,7 +1126,7 @@ end
 --======METHODS======--
 
 function Date:secondsUntil(date)
-    TypeError:assert(is(date, Date), "date", type(date), Date)
+    TypeError:assert(type(date) == "date", "date", type(date), "date")
 
     return date.seconds_until_epoch - self.seconds_until_epoch
 end
@@ -1135,62 +1136,51 @@ function Date:clone()
 
     internal = math.random()
 
-    return Date{
-        internal = internal,
-        offset = p.offset or 0,
-        minute = p.minute,
-        second = p.second,
-        month  = p.month,
-        year   = p.year,
-        hour   = p.hour,
-        day    = p.day
+    return self {
+        day      = p.day,
+        year     = p.year,
+        hour     = p.hour,
+        month    = p.month,
+        minute   = p.minute,
+        second   = p.second,
+        offset   = p.offset or 0,
+        internal = internal
     }
 end
 
---Shift the date by some amount of time.
 function Date:shift(year, week, day, hour, minute, second)
-    local p, pd, overload, date
+    local p, pd, date
 
     p = private[self]
     
-    if is(year, "table") then
-        overload = true
-        second = year.second
-        minute = year.minute
-        hour   = year.hour
-        day    = year.day
-        week   = year.week
-        year   = year.year
-    end
-    
+    day    = day    or 0
     year   = year   or 0
     week   = week   or 0
-    day    = day    or 0
     hour   = hour   or 0
     minute = minute or 0
     second = second or 0
 
-    TypeError:assert(is(second, "number"), (overload and "year." or "") .. "second", type(second), "number")
-    TypeError:assert(is(minute, "number"), (overload and "year." or "") .. "minute", type(minute), "number")
-    TypeError:assert(is(hour, "number"), (overload and "year." or "") .. "hour", type(hour), "number")
-    TypeError:assert(is(day, "number"), (overload and "year." or "") .. "day", type(day), "number")
-    TypeError:assert(is(week, "number"), (overload and "year." or "") .. "week", type(week), "number")
-    TypeError:assert(is(year, "number"), (overload and "year." or "") .. "year", type(year), "number")
+    TypeError:assert(type(day) == "number", "day", type(day), "number")
+    TypeError:assert(type(hour) == "number", "hour", type(hour), "number")
+    TypeError:assert(type(week) == "number", "week", type(week), "number")
+    TypeError:assert(type(year) == "number", "year", type(year), "number")
+    TypeError:assert(type(second) == "number", "second", type(second), "number")
+    TypeError:assert(type(minute) == "number", "minute", type(minute), "number")
 
+    day    = day    * seconds_in.day
     year   = year   * seconds_in.year
     week   = week   * seconds_in.week
-    day    = day    * seconds_in.day
     hour   = hour   * seconds_in.hour
     minute = minute * seconds_in.minute
-
-    date = Date:fromSecEpoch(self.seconds_until_epoch + second + minute + hour + day + week + year, p.offset)
+    
+    Date:fromSecEpoch(self.seconds_until_epoch + second + minute + hour + day + week + year, p.offset)
 
     pd = private[date]
 
-    p.year   = pd.year
-    p.month  = pd.month
     p.day    = pd.day
+    p.year   = pd.year
     p.hour   = pd.hour
+    p.month  = pd.month
     p.minute = pd.minute
     p.second = pd.second
 
@@ -1207,22 +1197,22 @@ function Date.__get:seconds_until_epoch()
     local p, result, offset
     
     p      = private[self]
-    offset = p.offset * seconds_in.hour
+    offset = p.offset * SECONDS_IN.hour
     
     if p.year >= 1970 then
-        result = elapsedDaysInYear(p) * seconds_in.day
+        result = elapsedDaysInYear(p) * SECONDS_IN.day
 
         for i = 1970, p.year - 1, 1 do
-            result = result + (isLeapYear(i) and seconds_in.leap_year or seconds_in.year)
+            result = result + (isLeapYear(i) and SECONDS_IN.leap_year or SECONDS_IN.year)
         end
 
         return result - offset
     end
     
-    result = seconds_in.day * ((isLeapYear(p.year) and 366 or 365) - elapsedDaysInYear(p))
+    result = SECONDS_IN.day * ((isLeapYear(p.year) and 366 or 365) - elapsedDaysInYear(p))
 
     for i = p.year + 1, 1970 - 1, 1 do
-        result = result + (isLeapYear(i) and seconds_in.leap_year or seconds_in.year)
+        result = result + (isLeapYear(i) and SECONDS_IN.leap_year or SECONDS_IN.year)
     end
 
     return result + offset * -1
@@ -1234,18 +1224,18 @@ end
 function Date.__get:RFC3599()
     local p = private[self]
 
-    return TL(
-        "%{('%04i'):format(p.year)}-"    ..
-        "%{('%02i'):format(p.month)}-"   ..
-        "%{('%02i'):format(p.day)}T"     ..
-        "%{('%02i'):format(p.hour)}:"    ..
-        "%{('%02i'):format(p.minute)}:"  ..
-        "%{('%02i'):format(p.second)}"   ..
-        "%{p.offset > 0 and '+' or '-'}" ..
-        "%{('%02i'):format(math.abs(p.offset - (p.offset % 1)))}:" ..
-        "%{('%02i'):format(p.offset % 1 * 60)}", {
-        p = p
-    })
+    return string.format(
+        "%04i-%02i-%02iT%02i:%02i:%02i%s%02i:%02i",
+        p.year,
+        p.month,
+        p.day,
+        p.hour,
+        p.minute,
+        p.second,
+        p.offset > 0 and "+" or "-",
+        math.abs(p.offset - p.offset % 1),
+        p.offset % 1 * 60
+    )
 end
 
 function Date.__get:first_of_month()
@@ -1264,7 +1254,7 @@ function Date.__get:first_of_month()
 end
 
 function Date.__get:first_of_month_day_name()
-    return day_names[self.first_of_month]
+    return DAYS[self.first_of_month]
 end
 
 function Date.__get:days_elapsed_in_year()
@@ -1280,23 +1270,27 @@ end
 function Date.__get:remaining_days_in_month()
     local p = private[self]
 
-    if p.month == 2 then return (isLeapYear(p.year) and 29 or 28) - p.day end
+    if p.month == 2 then
+        return (isLeapYear(p.year) and 29 or 28) - p.day
+    end
 
-    return days_in_month[p.month] - p.day
+    return DAYS_IN_MONTH[p.month] - p.day
 end
 
 function Date.__get:remaining_seconds_in_day()
     local p = private[self]
 
-    return seconds_in.day - ((p.hour * seconds_in.hour) + (p.minute * seconds_in.minute) + p.second)
+    return SECONDS_IN.day - (p.hour * SECONDS_IN.hour + p.minute * SECONDS_IN.minute + p.second)
 end
 
 function Date.__get:days_in_month()
     local p = private[self]
 
-    if p.month == 2 then return isLeapYear(p.year) and 29 or 28 end
+    if p.month == 2 then
+        return isLeapYear(p.year) and 29 or 28
+    end
 
-    return days_in_month[p.month]
+    return DAYS_IN_MONTH[p.month]
 end
 
 function Date.__get:leap_year()
@@ -1312,7 +1306,7 @@ function Date.__get:month()
 end
 
 function Date.__get:month_name()
-    return month_names[private[self].month]
+    return MONTHS[private[self].month]
 end
 
 function Date.__get:day()
@@ -1320,7 +1314,7 @@ function Date.__get:day()
 end
 
 function Date.__get:day_name()
-    return day_names[self.weekday]
+    return DAYS[self.weekday]
 end
 
 --https://math.stackexchange.com/questions/3275126/how-to-find-the-week-day-of-any-given-date
@@ -1333,7 +1327,7 @@ function Date.__get:weekday()
     a = p.year % 100
     b = (p.year - a) / 100
     
-    return ((a + math.floor(a / 4) - 2 * b + p.day + math.floor(b / 4) + month_lookup[p.month] - (p.month >= 3 and 0 or leap and 2 or 1)) % 7) + 1
+    return ((a + math.floor(a / 4) - 2 * b + p.day + math.floor(b / 4) + months_lut[p.month] - (p.month >= 3 and 0 or leap and 2 or 1)) % 7) + 1
 end
 
 function Date.__get:hour()
@@ -1353,40 +1347,42 @@ function Date.__get:offset()
 end
 
 function Date.__get:seconds_in_a_year()
-    return seconds_in.year
+    return SECONDS_IN.year
 end
 
 function Date.__get:seconds_in_a_day()
-    return seconds_in.day
+    return SECONDS_IN.day
 end
 
 function Date.__get:seconds_in_a_week()
-    return seconds_in.week
+    return SECONDS_IN.week
 end
 
 function Date.__get:seconds_in_a_hour()
-    return seconds_in.hour
+    return SECONDS_IN.hour
 end
 
 function Date.__get:seconds_in_a_minute()
-    return seconds_in.minute
+    return SECONDS_IN.minute
 end
 
 --======SETTERS======--
 
 function Date.__set:year(value)
-    TypeError:assert(is(value, "number"), "year", type(value), "number")
+    TypeError:assert(type(value) == "year", "year", type(value), "number")
 
     private[self].year = value
 end
 
 function Date.__set:month(value)
-    TypeError:assert(is(value, "number") or is(value, "string"), "month", type(value), "number/string")
+    local T = type(value)
 
-    if is(value, "string") then
-        value = table.find(month_names, value) or value
+    TypeError:assert(T == "number" or T == "string", "month", T, "number/string")
+
+    if T == "string" then
+        value = table.find(MONTHS, value:lower()) or value
         
-        InvalidError:assert(is(value, "number"), value, "month", months_str)
+        InvalidError:assert(type(value) == "number", value, "month", months_str)
     end
 
     RangeError:assert(1 <= value and value <= 12, value, "month", 1, 12)
@@ -1395,7 +1391,7 @@ function Date.__set:month(value)
 end
 
 function Date.__set:day(value)
-    TypeError:assert(is(value, "number"), "day", type(value), "number")
+    TypeError:assert(type(value) == "number", "day", type(value), "number")
 
     RangeError:assert(1 <= value and value <= self.days_in_month, value, "day", 1, self.days_in_month)
 
@@ -1403,7 +1399,7 @@ function Date.__set:day(value)
 end
 
 function Date.__set:hour(value)
-    TypeError:assert(is(value, "number"), "hour", type(value), "number")
+    TypeError:assert(type(value) == "number", "hour", type(value), "number")
 
     RangeError:assert(0 <= value and value <= 23, value, "hour", 0, 23)
 
@@ -1411,7 +1407,7 @@ function Date.__set:hour(value)
 end
 
 function Date.__set:minute(value)
-    TypeError:assert(is(value, "number"), "minute", type(value), "number")
+    TypeError:assert(type(value) == "number", "minute", type(value), "number")
 
     RangeError:assert(0 <= value and value <= 59, value, "minute", 0, 59)
 
@@ -1419,7 +1415,7 @@ function Date.__set:minute(value)
 end
 
 function Date.__set:second(value)
-    TypeError:assert(is(value, "number"), "second", type(value), "number")
+    TypeError:assert(type(value) == "number", "second", type(value), "number")
 
     RangeError:assert(0 <= value and value <= 59, value, "second", 0, 59)
 
@@ -1427,7 +1423,7 @@ function Date.__set:second(value)
 end
 
 function Date.__set:offset(value)
-    TypeError:assert(is(value, "number"), "offset", type(value), "number")
+    TypeError:assert(type(value) == "number", "offset", type(value), "number")
 
     RangeError:assert(-14 <= value and value <= 14, value, "offset", -14, 14)
 
@@ -1439,9 +1435,12 @@ end
 function Date:__tostring()
     local p = private[self]
 
-    return self:tostring(p.month, p.day, p.year)
+    return self:tostring(self.RFC3599)
 end
 
 Date.__type = "date"
 
-return Object:create(Date)
+---@type Date.Class
+local Class = Object:create(Date)
+
+return Class
