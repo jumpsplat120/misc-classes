@@ -48,7 +48,7 @@ function Async:waitFor(func, ...)
 
     co = coroutine.running()
 
-    if not co         then return end
+    if not co          then return end
     if not threads[co] then return end
 
     while true do
@@ -67,7 +67,7 @@ function Async:waitForEvent(object, event, timeout, ...)
 
     co = coroutine.running()
 
-    if not co         then return end
+    if not co          then return end
     if not threads[co] then return end
     
     if timeout then
