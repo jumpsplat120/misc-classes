@@ -292,7 +292,7 @@ function GoogleOauth2:setScopes(...)
     local result = {}
 
     for i, scope in varargs(...) do
-        local index = TL("args[%{i}]", { i = i })
+        local index = TL("<...>[%{i}]", { i = i })
 
         TypeError:assert(is(scope, "string"), index, type(scope), "string")
         InvalidError:assert(scope ~= "", "<EMPTY STRING>", index, "<NONEMPTY STRING>")
@@ -454,7 +454,7 @@ end
 function GoogleOauth2.__get:scopes()
     return setmetatable(private[self].scopes, {
         __newindex = function (tbl, i, v)
-            local index = TL("args[%{i}]", { i = i })
+            local index = TL("<...>[%{i}]", { i = i })
 
             TypeError:assert(is(i, "number"), index, type(i), "string")
             InvalidError:assert(v ~= "", "<EMPTY STRING>", index, "<NONEMPTY STRING>")
